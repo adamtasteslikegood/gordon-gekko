@@ -18,10 +18,13 @@ Minimal FastAPI project for crypto stats (CoinGecko proxy).
     - `PYTHONPATH=src python -m gekko.cli tickers --coin bitcoin --vs usd --pages 2`
     - `PYTHONPATH=src python -m gekko.cli arbitrage --coin bitcoin --vs usd --pages 2 --min-spread-pct 1 --buy-fee-pct 0.1 --sell-fee-pct 0.1`
     - `PYTHONPATH=src python -m gekko.cli agent`
+    - `PYTHONPATH=src python -m gekko.cli gpt5-agent`
 
 ### Agent subcommand
 
 The `agent` subcommand exposes Gordon Gekko tools over a JSON-based stdin/stdout protocol that can be connected to GPT-5 function calling or any automation framework capable of streaming JSON.
+
+The `gpt5-agent` subcommand launches an interactive terminal chat that proxies GPT-5 (via the OpenAI Responses API) and automatically fulfils tool invocations using Gordon Gekko data. Set `OPENAI_API_KEY` in your environment before running it.
 
 1. Start the agent:
 
@@ -94,20 +97,27 @@ CLI inside container
 Gordon Gekko exposes its core market and arbitrage routines as GPT-compatible tools. Retrieve the JSON function manifests via `gekko.list_tools()` and feed them to GPT-5 (or the GPT Functions API) alongside the Python handlers for invocation:
 
 ```python
+from openai import OpenAI
+
 from gekko import list_tools
 
+client = OpenAI()
 tools = list_tools()
 
-# Example with the GPT-5 client (pseudo-code)
-response = gpt5.chat.completions.create(
-    model="gpt-5.1",
-    messages=[
-        {"role": "user", "content": "Find arbitrage for bitcoin."},
+response = client.responses.create(
+    model="gpt-5.1-mini",
+    input=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Find arbitrage for bitcoin."},
+            ],
+        }
     ],
     tools=tools,
 )
 
-print(response.choices[0])
+print(response.output_text)
 ```
 
 Each tool advertises validated parameters and is backed by the same logic used by the REST and CLI interfaces, so the agent receives production-grade market data without additional plumbing.

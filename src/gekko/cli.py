@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, TextIO
 from .services.coingecko import get_coin_tickers
 from .services.arbitrage import normalize_tickers, compute_opportunities
 from .agents.interactive import GekkoAgent
+from .ai.responses import run_gpt5_agent_cli
 
 
 def _print_table(rows: List[List[str]]):
@@ -200,6 +201,26 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp_agent.set_defaults(func=_run_agent)
 
+    sp_gpt = sub.add_subparser(
+        "gpt5-agent",
+        help="Interactive GPT-5 session powered by the OpenAI Responses API",
+    )
+    sp_gpt.add_argument(
+        "--model",
+        default="gpt-5.1-mini",
+        help="OpenAI Responses model to use (default: gpt-5.1-mini)",
+    )
+    sp_gpt.add_argument(
+        "--system-prompt",
+        default=None,
+        help="Override the default system instructions for GPT-5",
+    )
+
+    async def _run_gpt(args: argparse.Namespace):
+        await run_gpt_cli(model=args.model, system_prompt=args.system_prompt)
+
+    sp_gpt.set_defaults(func=_run_gpt)
+
     return p
 
 
@@ -308,6 +329,26 @@ async def run_agent() -> None:
     if not logging.getLogger().hasHandlers():
         logging.basicConfig(level=logging.INFO)
     await serve_agent(agent=None, input_stream=sys.stdin, output_stream=sys.stdout)
+
+
+async def run_gpt_cli(*, model: str, system_prompt: str | None) -> None:
+    if "OPENAI_API_KEY" not in os.environ:
+        print(
+            "OPENAI_API_KEY environment variable is required for gpt5-agent.",
+            file=sys.stderr,
+        )
+        return
+
+    if not logging.getLogger().hasHandlers():
+        logging.basicConfig(level=logging.INFO)
+
+    prompt = system_prompt if system_prompt is not None else None
+
+    try:
+        await run_gpt5_agent_cli(model=model, system_prompt=prompt)
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logging.getLogger("gekko.cli").exception("Failed to start GPT-5 agent")
+        print(f"Failed to start GPT-5 agent: {exc}", file=sys.stderr)
 
 
 # -------- Interactive mode --------
