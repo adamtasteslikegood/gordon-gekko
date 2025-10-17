@@ -57,7 +57,31 @@ CLI inside container
 - `src/gekko/app.py` – FastAPI app factory and instance.
 - `src/gekko/routers/` – route modules (`health`, `market`).
 - `src/gekko/services/` – CoinGecko integration.
+- `src/gekko/ai/tools.py` – GPT tool metadata and handlers powered by Gordon Gekko services.
 - `tests/` – tests for health and arbitrage helpers.
+
+## AI assistants
+
+Gordon Gekko exposes its core market and arbitrage routines as GPT-compatible tools. Retrieve the JSON function manifests via `gekko.list_tools()` and feed them to GPT-5 (or the GPT Functions API) alongside the Python handlers for invocation:
+
+```python
+from gekko import list_tools
+
+tools = list_tools()
+
+# Example with the GPT-5 client (pseudo-code)
+response = gpt5.chat.completions.create(
+    model="gpt-5.1",
+    messages=[
+        {"role": "user", "content": "Find arbitrage for bitcoin."},
+    ],
+    tools=tools,
+)
+
+print(response.choices[0])
+```
+
+Each tool advertises validated parameters and is backed by the same logic used by the REST and CLI interfaces, so the agent receives production-grade market data without additional plumbing.
 
 ## Notes
 
