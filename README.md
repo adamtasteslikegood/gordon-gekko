@@ -17,6 +17,35 @@ Minimal FastAPI project for crypto stats (CoinGecko proxy).
   - Examples:
     - `PYTHONPATH=src python -m gekko.cli tickers --coin bitcoin --vs usd --pages 2`
     - `PYTHONPATH=src python -m gekko.cli arbitrage --coin bitcoin --vs usd --pages 2 --min-spread-pct 1 --buy-fee-pct 0.1 --sell-fee-pct 0.1`
+    - `PYTHONPATH=src python -m gekko.cli agent`
+
+### Agent subcommand
+
+The `agent` subcommand exposes Gordon Gekko tools over a JSON-based stdin/stdout protocol that can be connected to GPT-5 function calling or any automation framework capable of streaming JSON.
+
+1. Start the agent:
+
+   ```bash
+   PYTHONPATH=src python -m gekko.cli agent
+   ```
+
+   The process writes an initial `ready` message describing the available tools using OpenAI's function-calling schema.
+
+2. Send tool invocations as line-delimited JSON objects. Each request **must** provide `tool`, and may include an optional `request_id` for correlation:
+
+   ```json
+   {"request_id": "req-1", "tool": "list_tickers", "arguments": {"coin": "bitcoin", "vs": "usd"}}
+   ```
+
+3. Read responses from stdout. Successful results include `status: "ok"` and the tool payload; validation, HTTP, or runtime problems return machine-readable errors:
+
+   ```json
+   {"status": "ready", "tools": [{"type": "function", "function": {"name": "list_tickers", "description": "...", "parameters": {"type": "object", "properties": {"coin": {"type": "string"}}, "required": ["coin"]}}}]}
+   {"request_id": "req-1", "tool": "list_tickers", "status": "ok", "data": {"count": 25, "tickers": [...]}}
+   {"request_id": "req-2", "tool": "find_arbitrage", "status": "error", "error": {"type": "validation_error", "message": "'coin' is a required property"}}
+   ```
+
+External AI systems should maintain an open pipe to the process, inspect the `ready` handshake to learn tool schemas, and then stream requests/responses as needed.
 
 ## Docker
 

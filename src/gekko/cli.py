@@ -1,11 +1,14 @@
 import argparse
 import asyncio
 import json
+import logging
 import os
-from typing import Any, Dict, List, Optional
+import sys
+from typing import Any, Dict, List, Optional, TextIO
 
 from .services.coingecko import get_coin_tickers
 from .services.arbitrage import normalize_tickers, compute_opportunities
+from .agents.interactive import GekkoAgent
 
 
 def _print_table(rows: List[List[str]]):
@@ -181,9 +184,21 @@ def build_parser() -> argparse.ArgumentParser:
     sp_arb.set_defaults(func=run_arbitrage)
 
     sp_interactive = sub.add_parser("interactive", help="Interactive menu-driven mode")
+
     async def _run_interactive(_: argparse.Namespace):
         await run_interactive()
+
     sp_interactive.set_defaults(func=_run_interactive)
+
+    sp_agent = sub.add_parser(
+        "agent",
+        help="JSON-over-stdin interface for GPT integrations",
+    )
+
+    async def _run_agent(_: argparse.Namespace):
+        await run_agent()
+
+    sp_agent.set_defaults(func=_run_agent)
 
     return p
 
@@ -196,6 +211,103 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     return asyncio.run(args.func(args))
+
+
+async def serve_agent(
+    *,
+    agent: GekkoAgent | None = None,
+    input_stream: TextIO,
+    output_stream: TextIO,
+) -> None:
+    logger = logging.getLogger("gekko.agent.cli")
+    agent = agent or GekkoAgent()
+
+    def _emit(payload: Dict[str, Any]) -> None:
+        output_stream.write(json.dumps(payload) + "\n")
+        output_stream.flush()
+
+    _emit({"status": "ready", "tools": agent.available_tools()})
+
+    while True:
+        line = await asyncio.to_thread(input_stream.readline)
+        if not line:
+            break
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            request = json.loads(line)
+        except json.JSONDecodeError as exc:
+            logger.warning("Failed to decode agent request: %s", exc)
+            _emit(
+                {
+                    "status": "error",
+                    "error": {
+                        "type": "invalid_json",
+                        "message": str(exc),
+                    },
+                }
+            )
+            continue
+
+        request_id = request.get("request_id")
+        tool_name = request.get("tool")
+        arguments = request.get("arguments") or {}
+
+        if not tool_name:
+            _emit(
+                {
+                    "request_id": request_id,
+                    "status": "error",
+                    "error": {
+                        "type": "missing_tool",
+                        "message": "Field 'tool' is required.",
+                    },
+                }
+            )
+            continue
+
+        if not isinstance(arguments, dict):
+            _emit(
+                {
+                    "request_id": request_id,
+                    "tool": tool_name,
+                    "status": "error",
+                    "error": {
+                        "type": "invalid_arguments",
+                        "message": "Field 'arguments' must be an object.",
+                    },
+                }
+            )
+            continue
+
+        try:
+            response = await agent.dispatch(tool_name, arguments)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.exception("Unhandled dispatch error for tool %s", tool_name)
+            _emit(
+                {
+                    "request_id": request_id,
+                    "tool": tool_name,
+                    "status": "error",
+                    "error": {
+                        "type": "dispatch_error",
+                        "message": str(exc),
+                    },
+                }
+            )
+            continue
+
+        envelope = {"request_id": request_id, "tool": tool_name, **response}
+        _emit(envelope)
+
+
+async def run_agent() -> None:
+    if not logging.getLogger().hasHandlers():
+        logging.basicConfig(level=logging.INFO)
+    await serve_agent(agent=None, input_stream=sys.stdin, output_stream=sys.stdout)
 
 
 # -------- Interactive mode --------
