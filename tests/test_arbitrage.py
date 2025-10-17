@@ -36,3 +36,81 @@ def test_normalize_and_arbitrage_detection():
     assert best["sell"]["exchange_id"] == "exB"
     spread = (61200.0 - 59800.0) / 59800.0 * 100.0
     assert abs(best["raw_spread_pct"] - spread) < 1e-6
+
+
+def test_arbitrage_considers_later_pairs_after_failure():
+    # First combination uses the zero-price ticker on exA and fails the spread check,
+    # but the subsequent exA/exB pairing should succeed once the zero spread is skipped.
+    tickers = [
+        {
+            "exchange": "Exchange A",
+            "exchange_id": "exA",
+            "pair": "BTC/USD",
+            "price": 0.0,
+            "last_vs": 0.0,
+        },
+        {
+            "exchange": "Exchange A",
+            "exchange_id": "exA",
+            "pair": "BTC/USD",
+            "price": 100.0,
+            "last_vs": 100.0,
+        },
+        {
+            "exchange": "Exchange B",
+            "exchange_id": "exB",
+            "pair": "BTC/USD",
+            "price": 110.0,
+            "last_vs": 110.0,
+        },
+    ]
+
+    opps = compute_opportunities(tickers, min_spread_pct=5.0, top_n=3)
+
+    assert len(opps) == 1
+    best = opps[0]
+    assert best["buy"]["exchange_id"] == "exA"
+    assert best["buy"]["price"] == 100.0
+    assert best["sell"]["exchange_id"] == "exB"
+    assert best["sell"]["price"] == 110.0
+
+
+def test_arbitrage_handles_multiple_pairs_per_exchange_combo():
+    tickers = [
+        {
+            "exchange": "Exchange A",
+            "exchange_id": "exA",
+            "pair": "BTC/USD",
+            "price": 100.0,
+            "last_vs": 100.0,
+        },
+        {
+            "exchange": "Exchange B",
+            "exchange_id": "exB",
+            "pair": "BTC/USD",
+            "price": 110.0,
+            "last_vs": 110.0,
+        },
+        {
+            "exchange": "Exchange A",
+            "exchange_id": "exA",
+            "pair": "ETH/USD",
+            "price": 50.0,
+            "last_vs": 50.0,
+        },
+        {
+            "exchange": "Exchange B",
+            "exchange_id": "exB",
+            "pair": "ETH/USD",
+            "price": 60.0,
+            "last_vs": 60.0,
+        },
+    ]
+
+    opps = compute_opportunities(tickers, min_spread_pct=5.0, top_n=5)
+
+    assert len(opps) == 2
+    pairs = {(opp["buy"]["pair"], opp["sell"]["pair"]) for opp in opps}
+    assert pairs == {("ETH/USD", "ETH/USD"), ("BTC/USD", "BTC/USD")}
+    assert all(opp["buy"]["exchange_id"] == "exA" for opp in opps)
+    assert all(opp["sell"]["exchange_id"] == "exB" for opp in opps)

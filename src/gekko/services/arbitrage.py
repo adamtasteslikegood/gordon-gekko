@@ -125,10 +125,21 @@ def compute_opportunities(
             if b["exchange"] == s["exchange"]:
                 continue
             pb, ps = _price(b), _price(s)
-            pair_key = (b["exchange"], s["exchange"]) if pb <= ps else (s["exchange"], b["exchange"])
+            b_pair = b.get("pair")
+            s_pair = s.get("pair")
+            if b_pair and s_pair and b_pair != s_pair:
+                continue
+
+            b_exchange = b.get("exchange_id") or b.get("exchange") or ""
+            s_exchange = s.get("exchange_id") or s.get("exchange") or ""
+            pair_identifier = b_pair or s_pair or ""
+            pair_key = (
+                (pair_identifier, b_exchange, s_exchange)
+                if pb <= ps
+                else (pair_identifier, s_exchange, b_exchange)
+            )
             if pair_key in seen_pairs:
                 continue
-            seen_pairs.add(pair_key)
 
             gross_spread_pct, _, _ = _net_spread(
                 pb,
@@ -173,6 +184,8 @@ def compute_opportunities(
                     "est_net_profit_vs": est_net_profit_vs,
                 }
             )
+
+            seen_pairs.add(pair_key)
 
             if len(results) >= top_n:
                 break
