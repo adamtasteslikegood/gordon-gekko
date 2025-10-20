@@ -164,16 +164,33 @@ async def generate_response_with_tools(
         tool_messages: List[Message] = []
         for call in tool_calls:
             tool_name = call.get("name") or ""
-            arguments_raw = call.get("arguments") or "{}"
-            try:
-                arguments = json.loads(arguments_raw)
-            except json.JSONDecodeError:
-                log.warning(
-                    "Failed to decode tool arguments for %s: %s",
-                    tool_name,
-                    arguments_raw,
-                )
-                arguments = {}
+            arguments_raw = call.get("arguments")
+
+            if isinstance(arguments_raw, (str, bytes, bytearray)):
+                try:
+                    arguments = json.loads(arguments_raw)
+                except (json.JSONDecodeError, TypeError):
+                    log.warning(
+                        "Failed to decode tool arguments for %s: %s",
+                        tool_name,
+                        arguments_raw,
+                    )
+                    arguments = {}
+                if arguments and not isinstance(arguments, MutableMapping):
+                    log.warning(
+                        "Tool arguments for %s must be an object; received %r",
+                        tool_name,
+                        arguments,
+                    )
+                    arguments = {}
+            else:
+                arguments = _normalize_dict(arguments_raw)
+                if arguments_raw not in (None, {}) and not arguments:
+                    log.warning(
+                        "Unexpected tool arguments type for %s: %r",
+                        tool_name,
+                        arguments_raw,
+                    )
 
             result = await agent.dispatch(tool_name, arguments)
             tool_messages.append(
