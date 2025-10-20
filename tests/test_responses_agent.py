@@ -118,6 +118,99 @@ def test_generate_response_with_tools_handles_tool_call():
     assert payload["status"] == "ok"
 
 
+def test_generate_response_with_tools_handles_dict_arguments():
+    agent = StubAgent()
+    responses_api = FakeResponsesAPI(
+        [
+            FakeResponse(
+                [
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "text", "text": "Checking dict."}],
+                    },
+                    {
+                        "type": "tool_call",
+                        "id": "call-1",
+                        "name": "list_tickers",
+                        "arguments": {"coin": "ethereum", "vs": "usd"},
+                    },
+                ]
+            ),
+            FakeResponse(
+                [
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [
+                            {"type": "text", "text": "Dict handled."},
+                        ],
+                    }
+                ],
+                output_text="Dict handled.",
+            ),
+        ]
+    )
+
+    messages = [build_text_message("system", "You are helpful.")]
+
+    result = asyncio.run(
+        generate_response_with_tools(
+            responses_api=responses_api,
+            agent=agent,  # type: ignore[arg-type]
+            messages=messages,
+            model="gpt-5.1-mini",
+        )
+    )
+
+    assert "Dict handled." in result
+    assert agent.calls == [("list_tickers", {"coin": "ethereum", "vs": "usd"})]
+
+
+def test_generate_response_with_tools_handles_non_object_arguments_gracefully():
+    agent = StubAgent()
+    responses_api = FakeResponsesAPI(
+        [
+            FakeResponse(
+                [
+                    {
+                        "type": "tool_call",
+                        "id": "call-1",
+                        "name": "list_tickers",
+                        "arguments": ["unexpected"],
+                    },
+                ]
+            ),
+            FakeResponse(
+                [
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [
+                            {"type": "text", "text": "Still working."},
+                        ],
+                    }
+                ],
+                output_text="Still working.",
+            ),
+        ]
+    )
+
+    messages = [build_text_message("system", "You are helpful.")]
+
+    result = asyncio.run(
+        generate_response_with_tools(
+            responses_api=responses_api,
+            agent=agent,  # type: ignore[arg-type]
+            messages=messages,
+            model="gpt-5.1-mini",
+        )
+    )
+
+    assert result.endswith("Still working.")
+    assert agent.calls == [("list_tickers", {})]
+
+
 def test_generate_response_with_tools_returns_direct_message():
     agent = StubAgent()
     responses_api = FakeResponsesAPI(
