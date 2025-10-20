@@ -201,7 +201,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp_agent.set_defaults(func=_run_agent)
 
-    sp_gpt = sub.add_subparser(
+    sp_gpt = sub.add_parser(
         "gpt5-agent",
         help="Interactive GPT-5 session powered by the OpenAI Responses API",
     )
