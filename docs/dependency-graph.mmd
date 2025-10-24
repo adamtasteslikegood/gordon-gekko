@@ -1,0 +1,9 @@
+flowchart LR
+    "tests/test_ai_tools.py" --> "src/gekko/ai/__init__.py"
+    "tests/test_arbitrage_fees.py" --> "src/gekko/services/arbitrage.py"
+    "tests/test_arbitrage.py" --> "src/gekko/services/arbitrage.py"
+    "tests/test_responses_agent.py" --> "src/gekko/ai/responses.py"
+    "tests/test_repo_mapper.py" --> "tools/__init__.py"
+    "tests/test_health.py" --> "src/gekko/app.py"
+    "tests/test_agent.py" --> "src/gekko/agents/interactive.py"
+    "tests/test_agent.py" --> "src/gekko/cli.py"
