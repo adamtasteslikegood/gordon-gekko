@@ -124,5 +124,5 @@ Each tool advertises validated parameters and is backed by the same logic used b
 
 ## Notes
 
-- This project calls the public CoinGecko API; no API key required.
+- Set `CG_API_KEY` with your CoinGecko Demo API key to send the required `x-cg-demo-api-key` header on every CoinGecko request (bumps the public rate limit from ~5-15 rpm to ~30 rpm). When the variable is absent the app falls back to unauthenticated requests.
 - Arbitrage calculations are heuristic and ignore fees, slippage, latency, and transfer times. Not financial advice.

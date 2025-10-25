@@ -1,3 +1,4 @@
+import os
 from typing import List, Dict, Any, Optional
 
 import httpx
@@ -5,8 +6,25 @@ import logging
 
 
 BASE_URL = "https://api.coingecko.com/api/v3"
+API_KEY_ENV_VAR = "CG_API_KEY"
+API_KEY_HEADER = "x-cg-demo-api-key"
 logger = logging.getLogger("gekko.services.coingecko")
 _COIN_ID_CACHE: Dict[str, str] = {}
+
+
+def _auth_headers() -> Dict[str, str]:
+    """
+    Return CoinGecko demo API auth headers when `CG_API_KEY` is present.
+    """
+    api_key = os.getenv(API_KEY_ENV_VAR)
+    if not api_key:
+        return {}
+    return {API_KEY_HEADER: api_key}
+
+
+def _create_client(timeout: int | float) -> httpx.AsyncClient:
+    headers = _auth_headers()
+    return httpx.AsyncClient(base_url=BASE_URL, timeout=timeout, headers=headers or None)
 
 
 async def get_simple_price(ids: List[str], vs_currencies: List[str]) -> Dict[str, Any]:
@@ -14,7 +32,7 @@ async def get_simple_price(ids: List[str], vs_currencies: List[str]) -> Dict[str
         "ids": ",".join(ids),
         "vs_currencies": ",".join(vs_currencies),
     }
-    async with httpx.AsyncClient(base_url=BASE_URL, timeout=10) as client:
+    async with _create_client(timeout=10) as client:
         resp = await client.get("/simple/price", params=params)
         resp.raise_for_status()
         return resp.json()
@@ -44,7 +62,7 @@ async def get_coin_tickers(
     if depth is not None:
         params["depth"] = str(bool(depth)).lower()
 
-    async with httpx.AsyncClient(base_url=BASE_URL, timeout=15) as client:
+    async with _create_client(timeout=15) as client:
         resp = await client.get(f"/coins/{coin_id}/tickers", params=params)
         resp.raise_for_status()
         return resp.json()
@@ -86,7 +104,7 @@ async def resolve_coin_id(candidate: str) -> str:
 
     coins: List[Dict[str, Any]] = []
     try:
-        async with httpx.AsyncClient(base_url=BASE_URL, timeout=10) as client:
+        async with _create_client(timeout=10) as client:
             resp = await client.get("/search", params={"query": cleaned})
             resp.raise_for_status()
             payload = resp.json()
@@ -113,7 +131,7 @@ async def resolve_coin_id(candidate: str) -> str:
 
 
 async def get_supported_vs_currencies() -> List[str]:
-    async with httpx.AsyncClient(base_url=BASE_URL, timeout=10) as client:
+    async with _create_client(timeout=10) as client:
         resp = await client.get("/simple/supported_vs_currencies")
         resp.raise_for_status()
         return resp.json()
@@ -137,7 +155,7 @@ async def get_coins_markets(
     if price_change_percentage:
         params["price_change_percentage"] = price_change_percentage
 
-    async with httpx.AsyncClient(base_url=BASE_URL, timeout=15) as client:
+    async with _create_client(timeout=15) as client:
         resp = await client.get("/coins/markets", params=params)
         resp.raise_for_status()
         return resp.json()
@@ -145,7 +163,7 @@ async def get_coins_markets(
 
 async def get_exchanges_list(*, per_page: int = 250, page: int = 1) -> List[Dict[str, Any]]:
     params = {"per_page": per_page, "page": page}
-    async with httpx.AsyncClient(base_url=BASE_URL, timeout=15) as client:
+    async with _create_client(timeout=15) as client:
         resp = await client.get("/exchanges", params=params)
         resp.raise_for_status()
         return resp.json()
