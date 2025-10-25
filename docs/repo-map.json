@@ -1,0 +1,2259 @@
+{
+  "generated_at": "2025-10-24T22:28:49.560846+00:00",
+  "languages": {
+    "INI": {
+      "loc": 2,
+      "files": 1
+    },
+    "Python": {
+      "loc": 3324,
+      "files": 33
+    },
+    "Markdown": {
+      "loc": 120,
+      "files": 2
+    }
+  },
+  "packages": [
+    {
+      "name": "gekko",
+      "path": "src/gekko",
+      "type": "lib",
+      "deps": []
+    },
+    {
+      "name": "main",
+      "path": "main.py",
+      "type": "app",
+      "deps": []
+    },
+    {
+      "name": "tests",
+      "path": "tests",
+      "type": "lib",
+      "deps": [
+        "gekko",
+        "tools"
+      ]
+    },
+    {
+      "name": "tools",
+      "path": "tools",
+      "type": "lib",
+      "deps": []
+    }
+  ],
+  "modules": [
+    {
+      "path": "pytest.ini",
+      "language": "INI",
+      "loc": 2,
+      "exports": [],
+      "public_api": [],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "main.py",
+      "language": "Python",
+      "loc": 11,
+      "exports": [
+        "main"
+      ],
+      "public_api": [
+        "main"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "pathlib",
+        "sys",
+        "uvicorn"
+      ],
+      "defined_symbols": [
+        {
+          "name": "main",
+          "kind": "function",
+          "lines": 7,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "README.md",
+      "language": "Markdown",
+      "loc": 87,
+      "exports": [],
+      "public_api": [],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "AGENTS.md",
+      "language": "Markdown",
+      "loc": 33,
+      "exports": [],
+      "public_api": [],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/cli.py",
+      "language": "Python",
+      "loc": 454,
+      "exports": [
+        "build_parser",
+        "main",
+        "run_agent",
+        "run_arbitrage",
+        "run_gpt_cli",
+        "run_interactive",
+        "run_tickers",
+        "serve_agent"
+      ],
+      "public_api": [
+        "build_parser",
+        "main",
+        "run_agent",
+        "run_arbitrage",
+        "run_gpt_cli",
+        "run_interactive",
+        "run_tickers",
+        "serve_agent"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "argparse",
+        "asyncio",
+        "json",
+        "logging",
+        "os",
+        "sys",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "_print_table",
+          "kind": "function",
+          "lines": 10,
+          "doc": ""
+        },
+        {
+          "name": "_fetch_normalized_tickers",
+          "kind": "function",
+          "lines": 21,
+          "doc": ""
+        },
+        {
+          "name": "run_tickers",
+          "kind": "function",
+          "lines": 24,
+          "doc": ""
+        },
+        {
+          "name": "run_arbitrage",
+          "kind": "function",
+          "lines": 70,
+          "doc": ""
+        },
+        {
+          "name": "build_parser",
+          "kind": "function",
+          "lines": 77,
+          "doc": ""
+        },
+        {
+          "name": "main",
+          "kind": "function",
+          "lines": 8,
+          "doc": ""
+        },
+        {
+          "name": "serve_agent",
+          "kind": "function",
+          "lines": 89,
+          "doc": ""
+        },
+        {
+          "name": "run_agent",
+          "kind": "function",
+          "lines": 4,
+          "doc": ""
+        },
+        {
+          "name": "run_gpt_cli",
+          "kind": "function",
+          "lines": 18,
+          "doc": ""
+        },
+        {
+          "name": "run_interactive",
+          "kind": "function",
+          "lines": 151,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "high",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/app.py",
+      "language": "Python",
+      "loc": 10,
+      "exports": [
+        "create_app"
+      ],
+      "public_api": [
+        "create_app"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "fastapi"
+      ],
+      "defined_symbols": [
+        {
+          "name": "create_app",
+          "kind": "function",
+          "lines": 8,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_repo_mapper.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/__init__.py",
+      "language": "Python",
+      "loc": 3,
+      "exports": [
+        "app",
+        "list_tools",
+        "ToolSpec",
+        "TOOL_SPECS"
+      ],
+      "public_api": [
+        "app",
+        "list_tools",
+        "ToolSpec",
+        "TOOL_SPECS"
+      ],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/ai/tools.py",
+      "language": "Python",
+      "loc": 434,
+      "exports": [
+        "ToolSpec",
+        "TOOL_SPECS",
+        "list_tools"
+      ],
+      "public_api": [
+        "ToolSpec",
+        "TOOL_SPECS",
+        "list_tools"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "__future__",
+        "dataclasses",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "ToolSpec",
+          "kind": "class",
+          "lines": 19,
+          "doc": "Definition of a single GPT tool backed by Gordon Gekko services."
+        },
+        {
+          "name": "_ensure_sequence",
+          "kind": "function",
+          "lines": 2,
+          "doc": ""
+        },
+        {
+          "name": "_simple_price_handler",
+          "kind": "function",
+          "lines": 5,
+          "doc": ""
+        },
+        {
+          "name": "_coins_markets_handler",
+          "kind": "function",
+          "lines": 15,
+          "doc": ""
+        },
+        {
+          "name": "_coin_tickers_handler",
+          "kind": "function",
+          "lines": 22,
+          "doc": ""
+        },
+        {
+          "name": "_market_arbitrage_handler",
+          "kind": "function",
+          "lines": 57,
+          "doc": ""
+        },
+        {
+          "name": "_arbitrage_opportunities_handler",
+          "kind": "function",
+          "lines": 22,
+          "doc": ""
+        },
+        {
+          "name": "_arbitrage_per_exchange_prices_handler",
+          "kind": "function",
+          "lines": 38,
+          "doc": ""
+        },
+        {
+          "name": "list_tools",
+          "kind": "function",
+          "lines": 4,
+          "doc": "Return tool specifications formatted for GPT function calling."
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_ai_tools.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "high",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/ai/__init__.py",
+      "language": "Python",
+      "loc": 17,
+      "exports": [
+        "DEFAULT_SYSTEM_PROMPT",
+        "ToolSpec",
+        "TOOL_SPECS",
+        "build_text_message",
+        "generate_response_with_tools",
+        "list_tools",
+        "run_gpt5_agent_cli"
+      ],
+      "public_api": [
+        "DEFAULT_SYSTEM_PROMPT",
+        "ToolSpec",
+        "TOOL_SPECS",
+        "build_text_message",
+        "generate_response_with_tools",
+        "list_tools",
+        "run_gpt5_agent_cli"
+      ],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/ai/responses.py",
+      "language": "Python",
+      "loc": 218,
+      "exports": [
+        "build_text_message",
+        "generate_response_with_tools",
+        "run_gpt5_agent_cli"
+      ],
+      "public_api": [
+        "build_text_message",
+        "generate_response_with_tools",
+        "run_gpt5_agent_cli"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "__future__",
+        "asyncio",
+        "json",
+        "logging",
+        "openai",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "build_text_message",
+          "kind": "function",
+          "lines": 4,
+          "doc": "Create a Responses-style message containing a plain text block."
+        },
+        {
+          "name": "_normalize_dict",
+          "kind": "function",
+          "lines": 14,
+          "doc": ""
+        },
+        {
+          "name": "_normalize_content",
+          "kind": "function",
+          "lines": 7,
+          "doc": ""
+        },
+        {
+          "name": "_extract_output_items",
+          "kind": "function",
+          "lines": 11,
+          "doc": ""
+        },
+        {
+          "name": "_extract_output_text",
+          "kind": "function",
+          "lines": 12,
+          "doc": ""
+        },
+        {
+          "name": "_call_responses",
+          "kind": "function",
+          "lines": 2,
+          "doc": ""
+        },
+        {
+          "name": "generate_response_with_tools",
+          "kind": "function",
+          "lines": 129,
+          "doc": "Execute a Responses completion loop that fulfils tool calls."
+        },
+        {
+          "name": "run_gpt5_agent_cli",
+          "kind": "function",
+          "lines": 54,
+          "doc": "Launch an interactive GPT-5 session in the terminal."
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_responses_agent.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "medium",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/routers/market.py",
+      "language": "Python",
+      "loc": 135,
+      "exports": [
+        "arbitrage",
+        "coin_tickers",
+        "coins_markets",
+        "exchanges",
+        "simple_price",
+        "supported_vs_currencies"
+      ],
+      "public_api": [
+        "arbitrage",
+        "coin_tickers",
+        "coins_markets",
+        "exchanges",
+        "simple_price",
+        "supported_vs_currencies"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "fastapi",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "simple_price",
+          "kind": "function",
+          "lines": 10,
+          "doc": "Proxy to CoinGecko's /simple/price endpoint."
+        },
+        {
+          "name": "exchanges",
+          "kind": "function",
+          "lines": 5,
+          "doc": ""
+        },
+        {
+          "name": "supported_vs_currencies",
+          "kind": "function",
+          "lines": 2,
+          "doc": ""
+        },
+        {
+          "name": "coins_markets",
+          "kind": "function",
+          "lines": 15,
+          "doc": ""
+        },
+        {
+          "name": "coin_tickers",
+          "kind": "function",
+          "lines": 25,
+          "doc": "Fetch tickers for a coin across exchanges and normalize prices to `vs_currency`."
+        },
+        {
+          "name": "arbitrage",
+          "kind": "function",
+          "lines": 62,
+          "doc": "Compute simple cross-exchange arbitrage opportunities based on last trade prices."
+        }
+      ],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "medium",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/routers/arbitrage.py",
+      "language": "Python",
+      "loc": 65,
+      "exports": [
+        "arbitrage_opportunities",
+        "per_exchange_prices"
+      ],
+      "public_api": [
+        "arbitrage_opportunities",
+        "per_exchange_prices"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "fastapi",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "arbitrage_opportunities",
+          "kind": "function",
+          "lines": 20,
+          "doc": "Compute a simple cross-exchange arbitrage opportunity summary using CoinGecko tickers."
+        },
+        {
+          "name": "per_exchange_prices",
+          "kind": "function",
+          "lines": 42,
+          "doc": "Return last trade prices per exchange for a coin filtered by `vs_currency`."
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_arbitrage.py",
+          "tests/test_arbitrage_fees.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "elevated",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/routers/__init__.py",
+      "language": "Python",
+      "loc": 0,
+      "exports": [],
+      "public_api": [],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/routers/health.py",
+      "language": "Python",
+      "loc": 5,
+      "exports": [
+        "health"
+      ],
+      "public_api": [
+        "health"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "fastapi"
+      ],
+      "defined_symbols": [
+        {
+          "name": "health",
+          "kind": "function",
+          "lines": 2,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_health.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/agents/interactive.py",
+      "language": "Python",
+      "loc": 61,
+      "exports": [
+        "GekkoAgent"
+      ],
+      "public_api": [
+        "GekkoAgent"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "__future__",
+        "httpx",
+        "jsonschema",
+        "logging",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "GekkoAgent",
+          "kind": "class",
+          "lines": 61,
+          "doc": "Async dispatcher that routes tool requests with validation and logging."
+        }
+      ],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "elevated",
+        "global_state": false,
+        "io_side_effects": true,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/agents/tools.py",
+      "language": "Python",
+      "loc": 163,
+      "exports": [
+        "Tool",
+        "list_tools"
+      ],
+      "public_api": [
+        "Tool",
+        "list_tools"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "__future__",
+        "asyncio",
+        "dataclasses",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "Tool",
+          "kind": "class",
+          "lines": 19,
+          "doc": "Metadata describing an agent tool."
+        },
+        {
+          "name": "_to_bool",
+          "kind": "function",
+          "lines": 8,
+          "doc": ""
+        },
+        {
+          "name": "_to_float",
+          "kind": "function",
+          "lines": 7,
+          "doc": ""
+        },
+        {
+          "name": "_float_default",
+          "kind": "function",
+          "lines": 3,
+          "doc": ""
+        },
+        {
+          "name": "_to_int",
+          "kind": "function",
+          "lines": 7,
+          "doc": ""
+        },
+        {
+          "name": "_fetch_normalized_tickers",
+          "kind": "function",
+          "lines": 25,
+          "doc": ""
+        },
+        {
+          "name": "_tool_list_tickers",
+          "kind": "function",
+          "lines": 10,
+          "doc": ""
+        },
+        {
+          "name": "_tool_find_arbitrage",
+          "kind": "function",
+          "lines": 24,
+          "doc": ""
+        },
+        {
+          "name": "list_tools",
+          "kind": "function",
+          "lines": 56,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_ai_tools.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "medium",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/agents/__init__.py",
+      "language": "Python",
+      "loc": 3,
+      "exports": [
+        "GekkoAgent"
+      ],
+      "public_api": [
+        "GekkoAgent"
+      ],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/services/arbitrage.py",
+      "language": "Python",
+      "loc": 167,
+      "exports": [
+        "compute_opportunities",
+        "normalize_tickers"
+      ],
+      "public_api": [
+        "compute_opportunities",
+        "normalize_tickers"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "__future__",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "_norm_vs_price",
+          "kind": "function",
+          "lines": 12,
+          "doc": ""
+        },
+        {
+          "name": "_norm_vs_volume",
+          "kind": "function",
+          "lines": 15,
+          "doc": ""
+        },
+        {
+          "name": "normalize_tickers",
+          "kind": "function",
+          "lines": 41,
+          "doc": ""
+        },
+        {
+          "name": "_net_spread",
+          "kind": "function",
+          "lines": 11,
+          "doc": ""
+        },
+        {
+          "name": "compute_opportunities",
+          "kind": "function",
+          "lines": 102,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_arbitrage.py",
+          "tests/test_arbitrage_fees.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "medium",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/services/__init__.py",
+      "language": "Python",
+      "loc": 0,
+      "exports": [],
+      "public_api": [],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/services/coingecko.py",
+      "language": "Python",
+      "loc": 71,
+      "exports": [
+        "get_coin_tickers",
+        "get_coins_markets",
+        "get_exchanges_list",
+        "get_simple_price",
+        "get_supported_vs_currencies"
+      ],
+      "public_api": [
+        "get_coin_tickers",
+        "get_coins_markets",
+        "get_exchanges_list",
+        "get_simple_price",
+        "get_supported_vs_currencies"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "httpx",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "get_simple_price",
+          "kind": "function",
+          "lines": 9,
+          "doc": ""
+        },
+        {
+          "name": "get_coin_tickers",
+          "kind": "function",
+          "lines": 28,
+          "doc": "Fetch tickers for a coin across exchanges."
+        },
+        {
+          "name": "get_supported_vs_currencies",
+          "kind": "function",
+          "lines": 5,
+          "doc": ""
+        },
+        {
+          "name": "get_coins_markets",
+          "kind": "function",
+          "lines": 22,
+          "doc": ""
+        },
+        {
+          "name": "get_exchanges_list",
+          "kind": "function",
+          "lines": 6,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "elevated",
+        "global_state": false,
+        "io_side_effects": true,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/analysis/arbitrage.py",
+      "language": "Python",
+      "loc": 79,
+      "exports": [
+        "compute_opportunity_from_tickers",
+        "filter_tickers_by_vs_currency"
+      ],
+      "public_api": [
+        "compute_opportunity_from_tickers",
+        "filter_tickers_by_vs_currency"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "__future__",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "filter_tickers_by_vs_currency",
+          "kind": "function",
+          "lines": 19,
+          "doc": ""
+        },
+        {
+          "name": "compute_opportunity_from_tickers",
+          "kind": "function",
+          "lines": 68,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_arbitrage.py",
+          "tests/test_arbitrage_fees.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "elevated",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "src/gekko/analysis/__init__.py",
+      "language": "Python",
+      "loc": 0,
+      "exports": [],
+      "public_api": [],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tools/__init__.py",
+      "language": "Python",
+      "loc": 1,
+      "exports": [],
+      "public_api": [],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tools/repo_mapper.py",
+      "language": "Python",
+      "loc": 749,
+      "exports": [
+        "ModuleInfo",
+        "PackageInfo",
+        "SymbolInfo",
+        "analyze",
+        "build_graph",
+        "build_hotspots",
+        "build_test_index",
+        "compute_reverse_deps",
+        "detect_language",
+        "detect_packages",
+        "discover_files",
+        "enrich_languages",
+        "evaluate_risks",
+        "extract_generic_imports",
+        "extract_python_imports",
+        "extract_python_symbols",
+        "find_tests_for",
+        "generate_json",
+        "generate_markdown",
+        "language_breakdown",
+        "main",
+        "measure_loc",
+        "mermaid_from_edges",
+        "module_name_from_path",
+        "parse_args",
+        "read_text",
+        "recommend_refactors",
+        "render_module_summary",
+        "resolve_internal_module",
+        "scan_annotations",
+        "summarize_directory_tree",
+        "write_module_summaries"
+      ],
+      "public_api": [
+        "ModuleInfo",
+        "PackageInfo",
+        "SymbolInfo",
+        "analyze",
+        "build_graph",
+        "build_hotspots",
+        "build_test_index",
+        "compute_reverse_deps",
+        "detect_language",
+        "detect_packages",
+        "discover_files",
+        "enrich_languages",
+        "evaluate_risks",
+        "extract_generic_imports",
+        "extract_python_imports",
+        "extract_python_symbols",
+        "find_tests_for",
+        "generate_json",
+        "generate_markdown",
+        "language_breakdown",
+        "main",
+        "measure_loc",
+        "mermaid_from_edges",
+        "module_name_from_path",
+        "parse_args",
+        "read_text",
+        "recommend_refactors",
+        "render_module_summary",
+        "resolve_internal_module",
+        "scan_annotations",
+        "summarize_directory_tree",
+        "write_module_summaries"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "__future__",
+        "argparse",
+        "ast",
+        "collections",
+        "dataclasses",
+        "datetime",
+        "json",
+        "os",
+        "pathlib",
+        "re",
+        "sys",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "SymbolInfo",
+          "kind": "class",
+          "lines": 17,
+          "doc": ""
+        },
+        {
+          "name": "ModuleInfo",
+          "kind": "class",
+          "lines": 30,
+          "doc": ""
+        },
+        {
+          "name": "PackageInfo",
+          "kind": "class",
+          "lines": 13,
+          "doc": ""
+        },
+        {
+          "name": "discover_files",
+          "kind": "function",
+          "lines": 31,
+          "doc": ""
+        },
+        {
+          "name": "detect_language",
+          "kind": "function",
+          "lines": 2,
+          "doc": ""
+        },
+        {
+          "name": "measure_loc",
+          "kind": "function",
+          "lines": 18,
+          "doc": ""
+        },
+        {
+          "name": "module_name_from_path",
+          "kind": "function",
+          "lines": 11,
+          "doc": ""
+        },
+        {
+          "name": "extract_python_symbols",
+          "kind": "function",
+          "lines": 57,
+          "doc": ""
+        },
+        {
+          "name": "extract_python_imports",
+          "kind": "function",
+          "lines": 34,
+          "doc": ""
+        },
+        {
+          "name": "extract_generic_imports",
+          "kind": "function",
+          "lines": 46,
+          "doc": ""
+        },
+        {
+          "name": "scan_annotations",
+          "kind": "function",
+          "lines": 10,
+          "doc": ""
+        },
+        {
+          "name": "evaluate_risks",
+          "kind": "function",
+          "lines": 30,
+          "doc": ""
+        },
+        {
+          "name": "read_text",
+          "kind": "function",
+          "lines": 6,
+          "doc": ""
+        },
+        {
+          "name": "find_tests_for",
+          "kind": "function",
+          "lines": 12,
+          "doc": ""
+        },
+        {
+          "name": "build_test_index",
+          "kind": "function",
+          "lines": 15,
+          "doc": ""
+        },
+        {
+          "name": "detect_packages",
+          "kind": "function",
+          "lines": 35,
+          "doc": ""
+        },
+        {
+          "name": "summarize_directory_tree",
+          "kind": "function",
+          "lines": 18,
+          "doc": ""
+        },
+        {
+          "name": "language_breakdown",
+          "kind": "function",
+          "lines": 7,
+          "doc": ""
+        },
+        {
+          "name": "build_graph",
+          "kind": "function",
+          "lines": 11,
+          "doc": ""
+        },
+        {
+          "name": "resolve_internal_module",
+          "kind": "function",
+          "lines": 9,
+          "doc": ""
+        },
+        {
+          "name": "mermaid_from_edges",
+          "kind": "function",
+          "lines": 7,
+          "doc": ""
+        },
+        {
+          "name": "render_module_summary",
+          "kind": "function",
+          "lines": 40,
+          "doc": ""
+        },
+        {
+          "name": "write_module_summaries",
+          "kind": "function",
+          "lines": 6,
+          "doc": ""
+        },
+        {
+          "name": "compute_reverse_deps",
+          "kind": "function",
+          "lines": 7,
+          "doc": ""
+        },
+        {
+          "name": "build_hotspots",
+          "kind": "function",
+          "lines": 10,
+          "doc": ""
+        },
+        {
+          "name": "recommend_refactors",
+          "kind": "function",
+          "lines": 20,
+          "doc": ""
+        },
+        {
+          "name": "generate_markdown",
+          "kind": "function",
+          "lines": 50,
+          "doc": ""
+        },
+        {
+          "name": "generate_json",
+          "kind": "function",
+          "lines": 13,
+          "doc": ""
+        },
+        {
+          "name": "enrich_languages",
+          "kind": "function",
+          "lines": 8,
+          "doc": ""
+        },
+        {
+          "name": "analyze",
+          "kind": "function",
+          "lines": 97,
+          "doc": ""
+        },
+        {
+          "name": "parse_args",
+          "kind": "function",
+          "lines": 10,
+          "doc": ""
+        },
+        {
+          "name": "main",
+          "kind": "function",
+          "lines": 6,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_repo_mapper.py"
+        ]
+      },
+      "annotations": {
+        "todo": 2,
+        "fixme": 2,
+        "hack": 1,
+        "deprecated": 1
+      },
+      "risks": {
+        "complexity": "high",
+        "global_state": true,
+        "io_side_effects": true,
+        "security_notes": [
+          "uses eval() which can execute arbitrary code",
+          "uses exec() which can execute arbitrary code",
+          "unpickling can execute arbitrary code",
+          "yaml.load without SafeLoader can be unsafe"
+        ]
+      }
+    },
+    {
+      "path": "tests/test_ai_tools.py",
+      "language": "Python",
+      "loc": 139,
+      "exports": [
+        "test_arbitrage_opportunities_handler_uses_analysis",
+        "test_arbitrage_per_exchange_prices_handler_projects",
+        "test_coin_tickers_handler_normalizes",
+        "test_coins_markets_handler_delegates",
+        "test_list_tools_matches_specs",
+        "test_market_arbitrage_handler_pipeline",
+        "test_simple_price_handler_delegates",
+        "test_tool_specs_have_expected_schema"
+      ],
+      "public_api": [
+        "test_arbitrage_opportunities_handler_uses_analysis",
+        "test_arbitrage_per_exchange_prices_handler_projects",
+        "test_coin_tickers_handler_normalizes",
+        "test_coins_markets_handler_delegates",
+        "test_list_tools_matches_specs",
+        "test_market_arbitrage_handler_pipeline",
+        "test_simple_price_handler_delegates",
+        "test_tool_specs_have_expected_schema"
+      ],
+      "imports_internal": [
+        "gekko.ai"
+      ],
+      "imports_external": [
+        "__future__",
+        "asyncio",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "_get_spec",
+          "kind": "function",
+          "lines": 2,
+          "doc": ""
+        },
+        {
+          "name": "test_tool_specs_have_expected_schema",
+          "kind": "function",
+          "lines": 15,
+          "doc": ""
+        },
+        {
+          "name": "test_list_tools_matches_specs",
+          "kind": "function",
+          "lines": 9,
+          "doc": ""
+        },
+        {
+          "name": "test_simple_price_handler_delegates",
+          "kind": "function",
+          "lines": 14,
+          "doc": ""
+        },
+        {
+          "name": "test_coins_markets_handler_delegates",
+          "kind": "function",
+          "lines": 20,
+          "doc": ""
+        },
+        {
+          "name": "test_coin_tickers_handler_normalizes",
+          "kind": "function",
+          "lines": 28,
+          "doc": ""
+        },
+        {
+          "name": "test_market_arbitrage_handler_pipeline",
+          "kind": "function",
+          "lines": 21,
+          "doc": ""
+        },
+        {
+          "name": "test_arbitrage_opportunities_handler_uses_analysis",
+          "kind": "function",
+          "lines": 26,
+          "doc": ""
+        },
+        {
+          "name": "test_arbitrage_per_exchange_prices_handler_projects",
+          "kind": "function",
+          "lines": 28,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_ai_tools.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "medium",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/conftest.py",
+      "language": "Python",
+      "loc": 6,
+      "exports": [],
+      "public_api": [],
+      "imports_internal": [],
+      "imports_external": [
+        "os",
+        "sys"
+      ],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/test_arbitrage_fees.py",
+      "language": "Python",
+      "loc": 39,
+      "exports": [
+        "test_net_spread_with_fees_and_slippage"
+      ],
+      "public_api": [
+        "test_net_spread_with_fees_and_slippage"
+      ],
+      "imports_internal": [
+        "gekko.services.arbitrage"
+      ],
+      "imports_external": [],
+      "defined_symbols": [
+        {
+          "name": "test_net_spread_with_fees_and_slippage",
+          "kind": "function",
+          "lines": 47,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_arbitrage_fees.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/test_arbitrage.py",
+      "language": "Python",
+      "loc": 99,
+      "exports": [
+        "test_arbitrage_considers_later_pairs_after_failure",
+        "test_arbitrage_handles_multiple_pairs_per_exchange_combo",
+        "test_normalize_and_arbitrage_detection"
+      ],
+      "public_api": [
+        "test_arbitrage_considers_later_pairs_after_failure",
+        "test_arbitrage_handles_multiple_pairs_per_exchange_combo",
+        "test_normalize_and_arbitrage_detection"
+      ],
+      "imports_internal": [
+        "gekko.services.arbitrage"
+      ],
+      "imports_external": [],
+      "defined_symbols": [
+        {
+          "name": "_ticker",
+          "kind": "function",
+          "lines": 13,
+          "doc": ""
+        },
+        {
+          "name": "test_normalize_and_arbitrage_detection",
+          "kind": "function",
+          "lines": 20,
+          "doc": ""
+        },
+        {
+          "name": "test_arbitrage_considers_later_pairs_after_failure",
+          "kind": "function",
+          "lines": 35,
+          "doc": ""
+        },
+        {
+          "name": "test_arbitrage_handles_multiple_pairs_per_exchange_combo",
+          "kind": "function",
+          "lines": 39,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_arbitrage.py",
+          "tests/test_arbitrage_fees.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "elevated",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/test_responses_agent.py",
+      "language": "Python",
+      "loc": 207,
+      "exports": [
+        "FakeContent",
+        "FakeOutput",
+        "FakeResponse",
+        "FakeResponsesAPI",
+        "StubAgent",
+        "test_generate_response_with_tools_handles_dict_arguments",
+        "test_generate_response_with_tools_handles_non_object_arguments_gracefully",
+        "test_generate_response_with_tools_handles_tool_call",
+        "test_generate_response_with_tools_returns_direct_message"
+      ],
+      "public_api": [
+        "FakeContent",
+        "FakeOutput",
+        "FakeResponse",
+        "FakeResponsesAPI",
+        "StubAgent",
+        "test_generate_response_with_tools_handles_dict_arguments",
+        "test_generate_response_with_tools_handles_non_object_arguments_gracefully",
+        "test_generate_response_with_tools_handles_tool_call",
+        "test_generate_response_with_tools_returns_direct_message"
+      ],
+      "imports_internal": [
+        "gekko.ai.responses"
+      ],
+      "imports_external": [
+        "asyncio",
+        "json",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "StubAgent",
+          "kind": "class",
+          "lines": 20,
+          "doc": ""
+        },
+        {
+          "name": "FakeContent",
+          "kind": "class",
+          "lines": 6,
+          "doc": ""
+        },
+        {
+          "name": "FakeOutput",
+          "kind": "class",
+          "lines": 9,
+          "doc": ""
+        },
+        {
+          "name": "FakeResponse",
+          "kind": "class",
+          "lines": 4,
+          "doc": ""
+        },
+        {
+          "name": "FakeResponsesAPI",
+          "kind": "class",
+          "lines": 8,
+          "doc": ""
+        },
+        {
+          "name": "test_generate_response_with_tools_handles_tool_call",
+          "kind": "function",
+          "lines": 54,
+          "doc": ""
+        },
+        {
+          "name": "test_generate_response_with_tools_handles_dict_arguments",
+          "kind": "function",
+          "lines": 47,
+          "doc": ""
+        },
+        {
+          "name": "test_generate_response_with_tools_handles_non_object_arguments_gracefully",
+          "kind": "function",
+          "lines": 42,
+          "doc": ""
+        },
+        {
+          "name": "test_generate_response_with_tools_returns_direct_message",
+          "kind": "function",
+          "lines": 31,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_responses_agent.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "medium",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/test_repo_mapper.py",
+      "language": "Python",
+      "loc": 37,
+      "exports": [
+        "sample_repo",
+        "test_analyzer_generates_artifacts"
+      ],
+      "public_api": [
+        "sample_repo",
+        "test_analyzer_generates_artifacts"
+      ],
+      "imports_internal": [
+        "tools"
+      ],
+      "imports_external": [
+        "json",
+        "pathlib",
+        "pytest",
+        "shutil",
+        "sys"
+      ],
+      "defined_symbols": [
+        {
+          "name": "sample_repo",
+          "kind": "function",
+          "lines": 5,
+          "doc": ""
+        },
+        {
+          "name": "test_analyzer_generates_artifacts",
+          "kind": "function",
+          "lines": 27,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_repo_mapper.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/test_health.py",
+      "language": "Python",
+      "loc": 7,
+      "exports": [
+        "test_health"
+      ],
+      "public_api": [
+        "test_health"
+      ],
+      "imports_internal": [
+        "gekko.app"
+      ],
+      "imports_external": [
+        "fastapi.testclient"
+      ],
+      "defined_symbols": [
+        {
+          "name": "test_health",
+          "kind": "function",
+          "lines": 5,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_health.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/test_agent.py",
+      "language": "Python",
+      "loc": 122,
+      "exports": [
+        "test_agent_cli_invalid_json",
+        "test_agent_cli_routes_requests",
+        "test_agent_cli_unknown_tool",
+        "test_agent_cli_validation_error"
+      ],
+      "public_api": [
+        "test_agent_cli_invalid_json",
+        "test_agent_cli_routes_requests",
+        "test_agent_cli_unknown_tool",
+        "test_agent_cli_validation_error"
+      ],
+      "imports_internal": [
+        "gekko.agents.interactive",
+        "gekko.cli"
+      ],
+      "imports_external": [
+        "asyncio",
+        "io",
+        "json",
+        "typing"
+      ],
+      "defined_symbols": [
+        {
+          "name": "test_agent_cli_routes_requests",
+          "kind": "function",
+          "lines": 79,
+          "doc": ""
+        },
+        {
+          "name": "test_agent_cli_validation_error",
+          "kind": "function",
+          "lines": 18,
+          "doc": ""
+        },
+        {
+          "name": "test_agent_cli_unknown_tool",
+          "kind": "function",
+          "lines": 18,
+          "doc": ""
+        },
+        {
+          "name": "test_agent_cli_invalid_json",
+          "kind": "function",
+          "lines": 17,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/test_agent.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "medium",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/fixtures/sample_project/project_tests/test_core.py",
+      "language": "Python",
+      "loc": 5,
+      "exports": [
+        "test_compute_increments"
+      ],
+      "public_api": [
+        "test_compute_increments"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "sample_pkg.core"
+      ],
+      "defined_symbols": [
+        {
+          "name": "test_compute_increments",
+          "kind": "function",
+          "lines": 3,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/fixtures/sample_project/project_tests/test_core.py"
+        ]
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/fixtures/sample_project/src/sample_pkg/__init__.py",
+      "language": "Python",
+      "loc": 2,
+      "exports": [
+        "ImportantService",
+        "helper"
+      ],
+      "public_api": [
+        "ImportantService",
+        "helper"
+      ],
+      "imports_internal": [],
+      "imports_external": [],
+      "defined_symbols": [],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/fixtures/sample_project/src/sample_pkg/core.py",
+      "language": "Python",
+      "loc": 11,
+      "exports": [
+        "ImportantService",
+        "helper"
+      ],
+      "public_api": [
+        "ImportantService",
+        "helper"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "sample_pkg"
+      ],
+      "defined_symbols": [
+        {
+          "name": "ImportantService",
+          "kind": "class",
+          "lines": 9,
+          "doc": "Implements the main flow."
+        },
+        {
+          "name": "helper",
+          "kind": "function",
+          "lines": 3,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": true,
+        "paths": [
+          "tests/fixtures/sample_project/project_tests/test_core.py"
+        ]
+      },
+      "annotations": {
+        "todo": 1
+      },
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    },
+    {
+      "path": "tests/fixtures/sample_project/src/sample_pkg/utils.py",
+      "language": "Python",
+      "loc": 4,
+      "exports": [
+        "helper"
+      ],
+      "public_api": [
+        "helper"
+      ],
+      "imports_internal": [],
+      "imports_external": [
+        "math"
+      ],
+      "defined_symbols": [
+        {
+          "name": "helper",
+          "kind": "function",
+          "lines": 2,
+          "doc": ""
+        }
+      ],
+      "tests": {
+        "present": false,
+        "paths": []
+      },
+      "annotations": {},
+      "risks": {
+        "complexity": "low",
+        "global_state": false,
+        "io_side_effects": false,
+        "security_notes": []
+      }
+    }
+  ],
+  "graph": {
+    "nodes": [
+      {
+        "id": "pytest.ini",
+        "label": "pytest",
+        "type": "module"
+      },
+      {
+        "id": "main.py",
+        "label": "main",
+        "type": "module"
+      },
+      {
+        "id": "README.md",
+        "label": "README",
+        "type": "module"
+      },
+      {
+        "id": "AGENTS.md",
+        "label": "AGENTS",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/cli.py",
+        "label": "gekko.cli",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/app.py",
+        "label": "gekko.app",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/__init__.py",
+        "label": "gekko",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/ai/tools.py",
+        "label": "gekko.ai.tools",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/ai/__init__.py",
+        "label": "gekko.ai",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/ai/responses.py",
+        "label": "gekko.ai.responses",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/routers/market.py",
+        "label": "gekko.routers.market",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/routers/arbitrage.py",
+        "label": "gekko.routers.arbitrage",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/routers/__init__.py",
+        "label": "gekko.routers",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/routers/health.py",
+        "label": "gekko.routers.health",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/agents/interactive.py",
+        "label": "gekko.agents.interactive",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/agents/tools.py",
+        "label": "gekko.agents.tools",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/agents/__init__.py",
+        "label": "gekko.agents",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/services/arbitrage.py",
+        "label": "gekko.services.arbitrage",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/services/__init__.py",
+        "label": "gekko.services",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/services/coingecko.py",
+        "label": "gekko.services.coingecko",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/analysis/arbitrage.py",
+        "label": "gekko.analysis.arbitrage",
+        "type": "module"
+      },
+      {
+        "id": "src/gekko/analysis/__init__.py",
+        "label": "gekko.analysis",
+        "type": "module"
+      },
+      {
+        "id": "tools/__init__.py",
+        "label": "tools",
+        "type": "module"
+      },
+      {
+        "id": "tools/repo_mapper.py",
+        "label": "tools.repo_mapper",
+        "type": "module"
+      },
+      {
+        "id": "tests/test_ai_tools.py",
+        "label": "tests.test_ai_tools",
+        "type": "module"
+      },
+      {
+        "id": "tests/conftest.py",
+        "label": "tests.conftest",
+        "type": "module"
+      },
+      {
+        "id": "tests/test_arbitrage_fees.py",
+        "label": "tests.test_arbitrage_fees",
+        "type": "module"
+      },
+      {
+        "id": "tests/test_arbitrage.py",
+        "label": "tests.test_arbitrage",
+        "type": "module"
+      },
+      {
+        "id": "tests/test_responses_agent.py",
+        "label": "tests.test_responses_agent",
+        "type": "module"
+      },
+      {
+        "id": "tests/test_repo_mapper.py",
+        "label": "tests.test_repo_mapper",
+        "type": "module"
+      },
+      {
+        "id": "tests/test_health.py",
+        "label": "tests.test_health",
+        "type": "module"
+      },
+      {
+        "id": "tests/test_agent.py",
+        "label": "tests.test_agent",
+        "type": "module"
+      },
+      {
+        "id": "tests/fixtures/sample_project/project_tests/test_core.py",
+        "label": "tests.fixtures.sample_project.project_tests.test_core",
+        "type": "module"
+      },
+      {
+        "id": "tests/fixtures/sample_project/src/sample_pkg/__init__.py",
+        "label": "tests.fixtures.sample_project.src.sample_pkg",
+        "type": "module"
+      },
+      {
+        "id": "tests/fixtures/sample_project/src/sample_pkg/core.py",
+        "label": "tests.fixtures.sample_project.src.sample_pkg.core",
+        "type": "module"
+      },
+      {
+        "id": "tests/fixtures/sample_project/src/sample_pkg/utils.py",
+        "label": "tests.fixtures.sample_project.src.sample_pkg.utils",
+        "type": "module"
+      }
+    ],
+    "edges": [
+      {
+        "from": "tests/test_ai_tools.py",
+        "to": "src/gekko/ai/__init__.py",
+        "type": "import"
+      },
+      {
+        "from": "tests/test_arbitrage_fees.py",
+        "to": "src/gekko/services/arbitrage.py",
+        "type": "import"
+      },
+      {
+        "from": "tests/test_arbitrage.py",
+        "to": "src/gekko/services/arbitrage.py",
+        "type": "import"
+      },
+      {
+        "from": "tests/test_responses_agent.py",
+        "to": "src/gekko/ai/responses.py",
+        "type": "import"
+      },
+      {
+        "from": "tests/test_repo_mapper.py",
+        "to": "tools/__init__.py",
+        "type": "import"
+      },
+      {
+        "from": "tests/test_health.py",
+        "to": "src/gekko/app.py",
+        "type": "import"
+      },
+      {
+        "from": "tests/test_agent.py",
+        "to": "src/gekko/agents/interactive.py",
+        "type": "import"
+      },
+      {
+        "from": "tests/test_agent.py",
+        "to": "src/gekko/cli.py",
+        "type": "import"
+      }
+    ]
+  }
+}
