@@ -43,7 +43,7 @@ The `gpt5-agent` subcommand launches an interactive terminal chat that proxies G
 3. Read responses from stdout. Successful results include `status: "ok"` and the tool payload; validation, HTTP, or runtime problems return machine-readable errors:
 
    ```json
-   {"status": "ready", "tools": [{"type": "function", "function": {"name": "list_tickers", "description": "...", "parameters": {"type": "object", "properties": {"coin": {"type": "string"}}, "required": ["coin"]}}}]}
+   {"status": "ready", "tools": [{"type": "function", "name": "list_tickers", "description": "...", "parameters": {"type": "object", "properties": {"coin": {"type": "string"}}, "required": ["coin"]}}]}
    {"request_id": "req-1", "tool": "list_tickers", "status": "ok", "data": {"count": 25, "tickers": [...]}}
    {"request_id": "req-2", "tool": "find_arbitrage", "status": "error", "error": {"type": "validation_error", "message": "'coin' is a required property"}}
    ```
@@ -105,7 +105,7 @@ client = OpenAI()
 tools = list_tools()
 
 response = client.responses.create(
-    model="gpt-5.1-mini",
+    model="gpt-5",
     input=[
         {
             "role": "user",

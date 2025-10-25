@@ -6,7 +6,7 @@ import os
 import sys
 from typing import Any, Dict, List, Optional, TextIO
 
-from .services.coingecko import get_coin_tickers
+from .services.coingecko import get_coin_tickers, resolve_coin_id
 from .services.arbitrage import normalize_tickers, compute_opportunities
 from .agents.interactive import GekkoAgent
 from .ai.responses import run_gpt5_agent_cli
@@ -34,8 +34,9 @@ async def _fetch_normalized_tickers(
     min_volume: Optional[float],
 ):
     all_tickers: List[Dict[str, Any]] = []
+    resolved_coin_id = await resolve_coin_id(coin_id)
     for page in range(1, pages + 1):
-        payload = await get_coin_tickers(coin_id=coin_id, page=page)
+        payload = await get_coin_tickers(coin_id=resolved_coin_id, page=page)
         all_tickers.extend(payload.get("tickers", []))
     normalized = normalize_tickers(
         all_tickers,
@@ -207,8 +208,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp_gpt.add_argument(
         "--model",
-        default="gpt-5.1-mini",
-        help="OpenAI Responses model to use (default: gpt-5.1-mini)",
+        default="gpt-5",
+        help="OpenAI Responses model to use (default: gpt-5)",
     )
     sp_gpt.add_argument(
         "--system-prompt",

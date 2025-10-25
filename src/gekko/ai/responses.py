@@ -17,15 +17,37 @@ DEFAULT_SYSTEM_PROMPT = (
     "Only rely on the tools for fresh numbers; summarise the results for the user."
 )
 
+TOOL_CALL_TYPES = {"tool_call", "function_call"}
+
 
 ContentBlock = Dict[str, Any]
 Message = Dict[str, Any]
+RESPONSE_ONLY_FIELDS = {"status"}
+
+
+def _default_content_type(role: str) -> str:
+    """Map a chat role to the Responses API content type."""
+
+    return "output_text" if role == "assistant" else "input_text"
+
+
+def _normalize_block_type(role: str, block_type: str | None) -> str:
+    """Ensure outgoing content blocks always use a valid Responses content type."""
+
+    if block_type in {"input_text", "output_text"}:
+        return block_type
+    if block_type == "text":
+        return _default_content_type(role)
+    return block_type or _default_content_type(role)
 
 
 def build_text_message(role: str, text: str) -> Message:
     """Create a Responses-style message containing a plain text block."""
 
-    return {"role": role, "content": [{"type": "text", "text": text}]}
+    return {
+        "role": role,
+        "content": [{"type": _default_content_type(role), "text": text}],
+    }
 
 
 def _normalize_dict(item: Any) -> Dict[str, Any]:
@@ -80,6 +102,12 @@ def _extract_output_text(response: Any) -> str:
     return ""
 
 
+def _strip_response_fields(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove fields that the Responses API rejects when echoed back."""
+
+    return {key: value for key, value in item.items() if key not in RESPONSE_ONLY_FIELDS}
+
+
 async def _call_responses(responses_api: Any, **kwargs: Any) -> Any:
     return await asyncio.to_thread(responses_api.create, **kwargs)
 
@@ -100,6 +128,7 @@ async def generate_response_with_tools(
 
     final_chunks: List[str] = []
     iteration = 0
+    pending_reasoning: List[Message] = []
 
     while iteration < max_iterations:
         iteration += 1
@@ -119,20 +148,29 @@ async def generate_response_with_tools(
             final_chunks.append(output_text.strip())
             break
 
-        for item in output_items:
+        for raw_item in output_items:
+            item = _normalize_dict(raw_item)
             item_type = item.get("type")
-            if item_type == "tool_call":
-                tool_calls.append(item)
+
+            if item_type in TOOL_CALL_TYPES:
+                if pending_reasoning:
+                    messages.extend(pending_reasoning)
+                    pending_reasoning = []
+                sanitized = _strip_response_fields(item)
+                tool_calls.append(sanitized)
+                messages.append(sanitized)
                 continue
 
             if item_type == "message":
+                pending_reasoning = []
                 role = item.get("role", "assistant")
                 content = _normalize_content(item.get("content"))
 
+                text_blocks = {"input_text", "output_text", "text"}
                 text_fragments = [
                     block.get("text", "")
                     for block in content
-                    if block.get("type") in {"text", "output_text"}
+                    if block.get("type") in text_blocks
                     and isinstance(block.get("text"), str)
                 ]
 
@@ -145,7 +183,7 @@ async def generate_response_with_tools(
                     "role": role,
                     "content": [
                         {
-                            "type": block.get("type", "text"),
+                            "type": _normalize_block_type(role, block.get("type")),
                             "text": block.get("text", ""),
                         }
                         for block in content
@@ -157,14 +195,37 @@ async def generate_response_with_tools(
                     message_payload["tool_call_id"] = item["tool_call_id"]
 
                 messages.append(message_payload)
+                continue
+
+            if item_type == "function_call_output":
+                pending_reasoning = []
+                messages.append(_strip_response_fields(item))
+                continue
+
+            if item_type == "reasoning":
+                pending_reasoning.append(_strip_response_fields(item))
+                continue
 
         if not tool_calls:
+            pending_reasoning = []
             break
 
         tool_messages: List[Message] = []
         for call in tool_calls:
-            tool_name = call.get("name") or ""
+            function_blob = call.get("function")
+            if isinstance(function_blob, MutableMapping):
+                function_payload = dict(function_blob)
+            else:
+                function_payload = {}
+
+            tool_name = (
+                call.get("name")
+                or function_payload.get("name")
+                or ""
+            )
             arguments_raw = call.get("arguments")
+            if arguments_raw is None:
+                arguments_raw = function_payload.get("arguments")
 
             if isinstance(arguments_raw, (str, bytes, bytearray)):
                 try:
@@ -193,20 +254,27 @@ async def generate_response_with_tools(
                     )
 
             result = await agent.dispatch(tool_name, arguments)
+            tool_call_id = (
+                function_payload.get("call_id")
+                or call.get("call_id")
+                or function_payload.get("id")
+                or call.get("id")
+            )
+
+            if not tool_call_id:
+                log.warning("Skipping tool result for %s; missing call id.", tool_name)
+                continue
+
             tool_messages.append(
                 {
-                    "role": "tool",
-                    "tool_call_id": call.get("id"),
-                    "content": [
-                        {
-                            "type": "output_text",
-                            "text": json.dumps(result),
-                        }
-                    ],
+                    "type": "function_call_output",
+                    "call_id": tool_call_id,
+                    "output": json.dumps(result),
                 }
             )
 
         messages.extend(tool_messages)
+        pending_reasoning = []
 
     else:  # pragma: no cover - defensive guard against API regressions
         raise RuntimeError("Exceeded maximum iterations while processing tool calls.")
@@ -241,7 +309,11 @@ async def run_gpt5_agent_cli(
     print("Available tools:")
     for tool in agent.available_tools():
         fn = tool.get("function", {})
-        print(f"  • {fn.get('name')}: {fn.get('description')}")
+        name = tool.get("name") or fn.get("name") or "unnamed_tool"
+        description = tool.get("description") or fn.get("description") or ""
+        if not description:
+            description = "No description provided."
+        print(f"  • {name}: {description}")
 
     while True:
         user_input = await asyncio.to_thread(input, "You> ")

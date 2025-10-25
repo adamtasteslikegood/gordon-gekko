@@ -11,11 +11,9 @@ class StubAgent:
         self._tools = [
             {
                 "type": "function",
-                "function": {
-                    "name": "list_tickers",
-                    "description": "List tickers",
-                    "parameters": {"type": "object", "properties": {}},
-                },
+                "name": "list_tickers",
+                "description": "List tickers",
+                "parameters": {"type": "object", "properties": {}},
             }
         ]
 
@@ -74,8 +72,9 @@ def test_generate_response_with_tools_handles_tool_call():
                         "content": [{"type": "text", "text": "Checking markets."}],
                     },
                     {
-                        "type": "tool_call",
+                        "type": "function_call",
                         "id": "call-1",
+                        "call_id": "call-1",
                         "name": "list_tickers",
                         "arguments": json.dumps({"coin": "bitcoin", "vs": "usd"}),
                     },
@@ -103,7 +102,7 @@ def test_generate_response_with_tools_handles_tool_call():
             responses_api=responses_api,
             agent=agent,  # type: ignore[arg-type]
             messages=messages,
-            model="gpt-5.1-mini",
+            model="gpt-5",
         )
     )
 
@@ -112,10 +111,12 @@ def test_generate_response_with_tools_handles_tool_call():
     assert agent.calls == [("list_tickers", {"coin": "bitcoin", "vs": "usd"})]
     assert len(responses_api.calls) == 2
 
-    tool_messages = [m for m in messages if m.get("role") == "tool"]
+    tool_messages = [m for m in messages if m.get("type") == "function_call_output"]
     assert len(tool_messages) == 1
-    payload = json.loads(tool_messages[0]["content"][0]["text"])  # type: ignore[index]
+    payload = json.loads(tool_messages[0]["output"])  # type: ignore[index]
     assert payload["status"] == "ok"
+    call_entries = [m for m in messages if m.get("type") == "function_call"]
+    assert call_entries[0]["id"] == "call-1"
 
 
 def test_generate_response_with_tools_handles_dict_arguments():
@@ -130,8 +131,9 @@ def test_generate_response_with_tools_handles_dict_arguments():
                         "content": [{"type": "text", "text": "Checking dict."}],
                     },
                     {
-                        "type": "tool_call",
+                        "type": "function_call",
                         "id": "call-1",
+                        "call_id": "call-1",
                         "name": "list_tickers",
                         "arguments": {"coin": "ethereum", "vs": "usd"},
                     },
@@ -159,7 +161,7 @@ def test_generate_response_with_tools_handles_dict_arguments():
             responses_api=responses_api,
             agent=agent,  # type: ignore[arg-type]
             messages=messages,
-            model="gpt-5.1-mini",
+            model="gpt-5",
         )
     )
 
@@ -174,8 +176,9 @@ def test_generate_response_with_tools_handles_non_object_arguments_gracefully():
             FakeResponse(
                 [
                     {
-                        "type": "tool_call",
+                        "type": "function_call",
                         "id": "call-1",
+                        "call_id": "call-1",
                         "name": "list_tickers",
                         "arguments": ["unexpected"],
                     },
@@ -203,7 +206,7 @@ def test_generate_response_with_tools_handles_non_object_arguments_gracefully():
             responses_api=responses_api,
             agent=agent,  # type: ignore[arg-type]
             messages=messages,
-            model="gpt-5.1-mini",
+            model="gpt-5",
         )
     )
 
@@ -235,10 +238,63 @@ def test_generate_response_with_tools_returns_direct_message():
             responses_api=responses_api,
             agent=agent,  # type: ignore[arg-type]
             messages=messages,
-            model="gpt-5.1-mini",
+            model="gpt-5",
         )
     )
 
     assert result == "Hello there."
     assert not agent.calls
     assert messages[-1]["role"] == "assistant"
+
+
+def test_generate_response_with_tools_handles_function_blob_payloads():
+    agent = StubAgent()
+    responses_api = FakeResponsesAPI(
+        [
+            FakeResponse(
+                [
+                    {
+                        "type": "function_call",
+                        "function": {
+                            "id": "call-fn",
+                            "call_id": "call-fn",
+                            "name": "list_tickers",
+                            "arguments": json.dumps({"coin": "dogecoin"}),
+                        },
+                    }
+                ]
+            ),
+            FakeResponse(
+                [
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [
+                            {"type": "text", "text": "Dogecoin fetched."},
+                        ],
+                    }
+                ],
+                output_text="Dogecoin fetched.",
+            ),
+        ]
+    )
+
+    messages = [build_text_message("system", "You are helpful.")]
+
+    result = asyncio.run(
+        generate_response_with_tools(
+            responses_api=responses_api,
+            agent=agent,  # type: ignore[arg-type]
+            messages=messages,
+            model="gpt-5",
+        )
+    )
+
+    assert "Dogecoin fetched." in result
+    assert agent.calls == [("list_tickers", {"coin": "dogecoin"})]
+
+    tool_messages = [m for m in messages if m.get("type") == "function_call_output"]
+    assert tool_messages[0]["call_id"] == "call-fn"
+    call_entries = [m for m in messages if m.get("type") == "function_call"]
+    assert call_entries[0]["function"]["name"] == "list_tickers"
+

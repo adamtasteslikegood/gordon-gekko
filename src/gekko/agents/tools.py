@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, List
 
 from ..services.arbitrage import compute_opportunities, normalize_tickers
-from ..services.coingecko import get_coin_tickers
+from ..services.coingecko import get_coin_tickers, resolve_coin_id
 
 
 @dataclass
@@ -22,11 +22,9 @@ class Tool:
 
         return {
             "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": self.schema,
-            },
+            "name": self.name,
+            "description": self.description,
+            "parameters": self.schema,
         }
 
 
@@ -72,10 +70,11 @@ async def _fetch_normalized_tickers(
     include_risky: bool,
     min_volume: float | None,
 ) -> List[Dict[str, Any]]:
+    resolved_coin_id = await resolve_coin_id(coin_id)
     tasks = []
     pages = max(1, min(5, pages))
     for page in range(1, pages + 1):
-        tasks.append(get_coin_tickers(coin_id=coin_id, page=page))
+        tasks.append(get_coin_tickers(coin_id=resolved_coin_id, page=page))
     payloads = await asyncio.gather(*tasks)
     tickers: List[Dict[str, Any]] = []
     for payload in payloads:

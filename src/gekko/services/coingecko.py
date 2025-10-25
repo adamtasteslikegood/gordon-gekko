@@ -1,9 +1,12 @@
 from typing import List, Dict, Any, Optional
 
 import httpx
+import logging
 
 
 BASE_URL = "https://api.coingecko.com/api/v3"
+logger = logging.getLogger("gekko.services.coingecko")
+_COIN_ID_CACHE: Dict[str, str] = {}
 
 
 async def get_simple_price(ids: List[str], vs_currencies: List[str]) -> Dict[str, Any]:
@@ -45,6 +48,68 @@ async def get_coin_tickers(
         resp = await client.get(f"/coins/{coin_id}/tickers", params=params)
         resp.raise_for_status()
         return resp.json()
+
+
+def _select_coin_entry(normalized: str, coins: List[Dict[str, Any]]) -> Dict[str, Any] | None:
+    for coin in coins:
+        coin_id = coin.get("id")
+        if isinstance(coin_id, str) and coin_id.lower() == normalized:
+            return coin
+
+    for coin in coins:
+        symbol = coin.get("symbol")
+        if isinstance(symbol, str) and symbol.lower() == normalized:
+            return coin
+
+    for coin in coins:
+        name = coin.get("name")
+        if isinstance(name, str) and normalized in name.lower():
+            return coin
+
+    return None
+
+
+async def resolve_coin_id(candidate: str) -> str:
+    """
+    Resolve user-supplied coin identifiers (tickers, names, or slugs)
+    to a canonical CoinGecko coin id.
+    """
+
+    cleaned = (candidate or "").strip()
+    if not cleaned:
+        raise ValueError("Coin identifier is required.")
+
+    key = cleaned.lower()
+    cached = _COIN_ID_CACHE.get(key)
+    if cached:
+        return cached
+
+    coins: List[Dict[str, Any]] = []
+    try:
+        async with httpx.AsyncClient(base_url=BASE_URL, timeout=10) as client:
+            resp = await client.get("/search", params={"query": cleaned})
+            resp.raise_for_status()
+            payload = resp.json()
+            data = payload.get("coins")
+            if isinstance(data, list):
+                coins = data
+    except httpx.HTTPError as exc:
+        logger.debug("Coin search failed for %s: %s", cleaned, exc)
+
+    match = _select_coin_entry(key, coins)
+    if match:
+        coin_id = match.get("id")
+        if isinstance(coin_id, str):
+            _COIN_ID_CACHE[key] = coin_id
+            _COIN_ID_CACHE.setdefault(coin_id.lower(), coin_id)
+            symbol = match.get("symbol")
+            if isinstance(symbol, str):
+                _COIN_ID_CACHE.setdefault(symbol.lower(), coin_id)
+            return coin_id
+
+    fallback = key.replace(" ", "-")
+    _COIN_ID_CACHE[key] = fallback
+    return fallback
 
 
 async def get_supported_vs_currencies() -> List[str]:
