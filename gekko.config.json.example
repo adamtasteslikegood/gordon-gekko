@@ -1,0 +1,13 @@
+{
+  "mode": "USE_ENV",
+  "responses": {
+    "max_input_tokens": 100000,
+    "target_input_tokens": 80000,
+    "max_tool_output_chars": 200000,
+    "max_tool_items": 200,
+    "min_messages_to_keep": 8,
+    "save_tool_outputs": false,
+    "tool_outputs_dir": "tool_outputs"
+  }
+}
+

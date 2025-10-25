@@ -9,6 +9,7 @@ import os
 from typing import Any, Dict, Iterable, List, MutableMapping, Tuple
 
 from ..agents.interactive import GekkoAgent
+from ..config import ResponsesConfig, resolve_responses_config
 
 logger = logging.getLogger("gekko.ai.responses")
 
@@ -20,12 +21,8 @@ DEFAULT_SYSTEM_PROMPT = (
 
 TOOL_CALL_TYPES = {"tool_call", "function_call"}
 
-# Context management defaults (tunable via env vars):
-MAX_INPUT_TOKENS = int(os.getenv("GEKKO_RESPONSES_MAX_INPUT_TOKENS", "100000"))
-TARGET_INPUT_TOKENS = int(os.getenv("GEKKO_RESPONSES_TARGET_INPUT_TOKENS", "80000"))
-MAX_TOOL_OUTPUT_CHARS = int(os.getenv("GEKKO_RESPONSES_MAX_TOOL_OUTPUT_CHARS", "200000"))
-MAX_TOOL_ITEMS = int(os.getenv("GEKKO_RESPONSES_MAX_TOOL_ITEMS", "200"))
-MIN_MESSAGES_TO_KEEP = int(os.getenv("GEKKO_RESPONSES_MIN_MESSAGES_TO_KEEP", "8"))
+# Default config loader (env-first behavior) used when no explicit config is provided.
+_DEFAULT_CFG = resolve_responses_config()
 
 
 ContentBlock = Dict[str, Any]
@@ -185,13 +182,13 @@ def _summarize_messages(messages: List[Message]) -> str:
     return "\n".join(lines)
 
 
-def _prune_history(messages: List[Message]) -> Tuple[List[Message], bool]:
+def _prune_history(messages: List[Message], cfg: ResponsesConfig) -> Tuple[List[Message], bool]:
     """Ensure messages stay under TARGET_INPUT_TOKENS by dropping oldest and inserting a summary.
 
     Returns (new_messages, pruned_flag).
     """
     total = _estimate_tokens(messages)
-    if total <= TARGET_INPUT_TOKENS:
+    if total <= cfg.target_input_tokens:
         return messages, False
 
     # Keep system message(s)
@@ -199,7 +196,7 @@ def _prune_history(messages: List[Message]) -> Tuple[List[Message], bool]:
     non_system = [m for m in messages if m.get("role") != "system"]
 
     # Always keep the most recent slice
-    tail_keep = max(MIN_MESSAGES_TO_KEEP, 4)
+    tail_keep = max(cfg.min_messages_to_keep, 4)
     recent = non_system[-tail_keep:]
     removed = non_system[:-tail_keep]
 
@@ -215,14 +212,14 @@ def _prune_history(messages: List[Message]) -> Tuple[List[Message], bool]:
     pruned.extend(recent)
 
     # If still above hard cap, drop more from the head of 'recent'
-    while _estimate_tokens(pruned) > MAX_INPUT_TOKENS and len(recent) > 2:
+    while _estimate_tokens(pruned) > cfg.max_input_tokens and len(recent) > 2:
         recent = recent[1:]
         pruned = pruned[: len(system_msgs[:1]) + 1] + recent
 
     return pruned, True
 
 
-def _shrink_large_lists(obj: Any) -> Any:
+def _shrink_large_lists(obj: Any, cfg: ResponsesConfig) -> Any:
     """Truncate large list fields in dicts to bound size.
 
     - For dicts: if a value is a list longer than MAX_TOOL_ITEMS, keep the first N and add a metadata key with omitted count.
@@ -231,15 +228,15 @@ def _shrink_large_lists(obj: Any) -> Any:
     """
     try:
         if isinstance(obj, list):
-            if len(obj) > MAX_TOOL_ITEMS:
-                return obj[:MAX_TOOL_ITEMS] + [f"…omitted {len(obj) - MAX_TOOL_ITEMS} items"]
+            if len(obj) > cfg.max_tool_items:
+                return obj[: cfg.max_tool_items] + [f"…omitted {len(obj) - cfg.max_tool_items} items"]
             return obj
         if isinstance(obj, MutableMapping):
             new: Dict[str, Any] = {}
             for k, v in obj.items():
-                if isinstance(v, list) and len(v) > MAX_TOOL_ITEMS:
-                    new[k] = v[:MAX_TOOL_ITEMS]
-                    new[f"_{k}_omitted_count"] = len(v) - MAX_TOOL_ITEMS
+                if isinstance(v, list) and len(v) > cfg.max_tool_items:
+                    new[k] = v[: cfg.max_tool_items]
+                    new[f"_{k}_omitted_count"] = len(v) - cfg.max_tool_items
                 elif isinstance(v, str) and len(v) > 4000:
                     new[k] = v[:4000] + "…"
                 else:
@@ -250,14 +247,14 @@ def _shrink_large_lists(obj: Any) -> Any:
         return obj
 
 
-def _compact_tool_output(payload: Any) -> Any:
+def _compact_tool_output(payload: Any, cfg: ResponsesConfig) -> Any:
     """Return a payload safe for the model: shrink oversized JSON by truncating lists/strings.
     If serialized size still exceeds MAX_TOOL_OUTPUT_CHARS, replace with a stub containing counts.
     """
     try:
-        compact = _shrink_large_lists(payload)
+        compact = _shrink_large_lists(payload, cfg)
         text = json.dumps(compact)
-        if len(text) <= MAX_TOOL_OUTPUT_CHARS:
+        if len(text) <= cfg.max_tool_output_chars:
             return compact
         # Fallback: produce a stub
         if isinstance(payload, list):
@@ -266,7 +263,7 @@ def _compact_tool_output(payload: Any) -> Any:
             return {
                 "_truncated": True,
                 "type": "object",
-                "keys": list(payload.keys())[:MAX_TOOL_ITEMS],
+                "keys": list(payload.keys())[: cfg.max_tool_items],
             }
         return {"_truncated": True, "type": type(payload).__name__}
     except Exception:
@@ -285,6 +282,7 @@ async def generate_response_with_tools(
     model: str,
     logger: logging.Logger | None = None,
     max_iterations: int = 8,
+    responses_config: ResponsesConfig | None = None,
 ) -> str:
     """Execute a Responses completion loop that fulfils tool calls."""
 
@@ -295,9 +293,11 @@ async def generate_response_with_tools(
     iteration = 0
     pending_reasoning: List[Message] = []
 
+    cfg = responses_config or _DEFAULT_CFG
+
     while iteration < max_iterations:
         # Proactively prune long histories before each model call
-        messages, was_pruned = _prune_history(messages)
+        messages, was_pruned = _prune_history(messages, cfg)
         if was_pruned:
             log.debug("Pruned message history to stay within token budget.")
         iteration += 1
@@ -423,7 +423,33 @@ async def generate_response_with_tools(
                     )
 
             result = await agent.dispatch(tool_name, arguments)
-            result = _compact_tool_output(result)
+
+            # Optionally persist full result to disk
+            if cfg.save_tool_outputs:
+                try:
+                    os.makedirs(cfg.tool_outputs_dir, exist_ok=True)
+                    safe_name = (tool_name or "tool").replace("/", "_").replace(" ", "_")
+                    call_id = (
+                        function_payload.get("call_id")
+                        or call.get("call_id")
+                        or function_payload.get("id")
+                        or call.get("id")
+                        or "call"
+                    )
+                    filename = f"{safe_name}-{call_id}.json"
+                    path = os.path.join(cfg.tool_outputs_dir, filename)
+                    with open(path, "w", encoding="utf-8") as f:
+                        json.dump(result, f)
+                    # Annotate result so the model gets a pointer
+                    if isinstance(result, dict):
+                        result = dict(result)
+                        result.setdefault("_saved_to", path)
+                    else:
+                        result = {"_saved_to": path, "data": result}
+                except Exception:  # best-effort persistence
+                    pass
+
+            result = _compact_tool_output(result, cfg)
             tool_call_id = (
                 function_payload.get("call_id")
                 or call.get("call_id")
@@ -445,7 +471,7 @@ async def generate_response_with_tools(
 
         messages.extend(tool_messages)
         # Prune again since tool outputs can be large
-        messages, _ = _prune_history(messages)
+        messages, _ = _prune_history(messages, cfg)
         pending_reasoning = []
 
     else:  # pragma: no cover - defensive guard against API regressions
@@ -461,11 +487,12 @@ async def run_gpt5_agent_cli(
     system_prompt: str | None = None,
     agent: GekkoAgent | None = None,
     responses_api: Any | None = None,
+    responses_config: ResponsesConfig | None = None,
 ) -> None:
     """Launch an interactive GPT-5 session in the terminal."""
 
     agent = agent or GekkoAgent()
-
+    
     if responses_api is None:
         from openai import OpenAI  # pylint: disable=import-error
 
@@ -503,6 +530,7 @@ async def run_gpt5_agent_cli(
                 agent=agent,
                 messages=messages,
                 model=model,
+                responses_config=responses_config or _DEFAULT_CFG,
             )
         except Exception as exc:  # pragma: no cover - defensive logging for CLI use
             logger.exception("GPT-5 agent failed")

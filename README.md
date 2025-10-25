@@ -50,6 +50,19 @@ The `gpt5-agent` subcommand launches an interactive terminal chat that proxies G
 
 External AI systems should maintain an open pipe to the process, inspect the `ready` handshake to learn tool schemas, and then stream requests/responses as needed.
 
+### GPT-5 interactive agent
+
+- Run with defaults:
+  - `PYTHONPATH=src python -m gekko.cli gpt5-agent --model gpt-5`
+- Tuning context + tool-output limits via CLI:
+  - `--max-input-tokens`, `--target-input-tokens`, `--max-tool-output-chars`, `--max-tool-items`, `--min-messages-to-keep`
+  - Persist full tool outputs and reference them in-chat:
+    - `--save-tool-outputs --tool-outputs-dir ./tool_outputs`
+- Config file (optional):
+  - Copy `gekko.config.json.example` to `gekko.config.json` and edit.
+  - First key `mode`: `USE_ENV` (default, read env), `USE_CONFIG` (use file values), `RESET_TO_DEFAULT` (ignore both).
+  - You can also point to a path with `--config /path/to/gekko.config.json`.
+
 ## Docker
 
 Step-by-step
@@ -126,3 +139,8 @@ Each tool advertises validated parameters and is backed by the same logic used b
 
 - Set `CG_API_KEY` with your CoinGecko Demo API key to send the required `x-cg-demo-api-key` header on every CoinGecko request (bumps the public rate limit from ~5-15 rpm to ~30 rpm). When the variable is absent the app falls back to unauthenticated requests.
 - Arbitrage calculations are heuristic and ignore fees, slippage, latency, and transfer times. Not financial advice.
+
+## Configuration & Tests
+
+- Config precedence for GPT-5 context controls: `USE_ENV` (environment), `USE_CONFIG` (file values), `RESET_TO_DEFAULT` (hard defaults). See `gekko.config.json.example` for structure.
+- Run tests: `pytest -q`. Unit tests cover config modes and the optional “save tool outputs to disk” behavior.

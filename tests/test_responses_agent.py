@@ -1,8 +1,10 @@
 import asyncio
+import os
 import json
 from typing import Any, Dict, List
 
 from gekko.ai.responses import build_text_message, generate_response_with_tools
+from gekko.config import ResponsesConfig
 
 
 class StubAgent:
@@ -58,6 +60,68 @@ class FakeResponsesAPI:
     def create(self, **kwargs: Any) -> FakeResponse:
         self.calls.append(kwargs)
         return self._responses.pop(0)
+
+
+def test_generate_response_with_tools_saves_tool_output(tmp_path):
+    class SavingAgent(StubAgent):
+        async def dispatch(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+            # Return a payload that would normally be large-ish
+            return {"status": "ok", "data": {"numbers": list(range(10))}}
+
+    agent = SavingAgent()
+    responses_api = FakeResponsesAPI(
+        [
+            FakeResponse(
+                [
+                    {
+                        "type": "function_call",
+                        "id": "call-save",
+                        "call_id": "call-save",
+                        "name": "list_tickers",
+                        "arguments": {"coin": "bitcoin"},
+                    }
+                ]
+            ),
+            FakeResponse(
+                [
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "text", "text": "Done."}],
+                    }
+                ],
+                output_text="Done.",
+            ),
+        ]
+    )
+
+    cfg = ResponsesConfig(
+        save_tool_outputs=True,
+        tool_outputs_dir=str(tmp_path),
+    )
+
+    messages = [build_text_message("system", "You are helpful.")]
+
+    _ = asyncio.run(
+        generate_response_with_tools(
+            responses_api=responses_api,
+            agent=agent,  # type: ignore[arg-type]
+            messages=messages,
+            model="gpt-5",
+            responses_config=cfg,
+        )
+    )
+
+    # Ensure a function_call_output message was added with a pointer to disk
+    out_msgs = [m for m in messages if m.get("type") == "function_call_output"]
+    assert out_msgs, "Expected function_call_output in messages"
+    payload = out_msgs[0]
+    data = payload.get("output")
+    assert isinstance(data, str)
+    parsed = json.loads(data)
+    assert parsed.get("_saved_to")
+    saved_path = parsed["_saved_to"]
+    assert saved_path and os.path.exists(saved_path)
 
 
 def test_generate_response_with_tools_handles_tool_call():
@@ -297,4 +361,3 @@ def test_generate_response_with_tools_handles_function_blob_payloads():
     assert tool_messages[0]["call_id"] == "call-fn"
     call_entries = [m for m in messages if m.get("type") == "function_call"]
     assert call_entries[0]["function"]["name"] == "list_tickers"
-
