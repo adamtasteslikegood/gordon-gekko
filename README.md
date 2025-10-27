@@ -54,6 +54,7 @@ External AI systems should maintain an open pipe to the process, inspect the `re
 
 - Run with defaults:
   - `PYTHONPATH=src python -m gekko.cli gpt5-agent --model gpt-5`
+  - Web search is enabled: the agent includes OpenAI's built-in `web_search` tool, allowing GPT-5 to search the web when needed (no extra setup required beyond `OPENAI_API_KEY`).
 - Tuning context + tool-output limits via CLI:
   - `--max-input-tokens`, `--target-input-tokens`, `--max-tool-output-chars`, `--max-tool-items`, `--min-messages-to-keep`
   - Persist full tool outputs and reference them in-chat:

@@ -281,7 +281,9 @@ async def serve_agent(
         output_stream.write(json.dumps(payload) + "\n")
         output_stream.flush()
 
-    _emit({"status": "ready", "tools": agent.available_tools()})
+    # Advertise only function tools over the JSON IPC interface
+    announced_tools = [t for t in agent.available_tools() if t.get("type") == "function"]
+    _emit({"status": "ready", "tools": announced_tools})
 
     while True:
         line = await asyncio.to_thread(input_stream.readline)

@@ -387,6 +387,12 @@ async def generate_response_with_tools(
             else:
                 function_payload = {}
 
+            # Skip non-function built-in tool calls (e.g., web_search handled by OpenAI)
+            call_type = call.get("type")
+            if not function_payload and call_type != "function_call":
+                log.debug("Skipping non-function tool call: %r", call_type or call.get("name"))
+                continue
+
             tool_name = (
                 call.get("name")
                 or function_payload.get("name")
@@ -507,11 +513,18 @@ async def run_gpt5_agent_cli(
     print("Connected to GPT-5 Responses API. Type 'exit' to quit.")
     print("Available tools:")
     for tool in agent.available_tools():
-        fn = tool.get("function", {})
-        name = tool.get("name") or fn.get("name") or "unnamed_tool"
-        description = tool.get("description") or fn.get("description") or ""
-        if not description:
-            description = "No description provided."
+        if tool.get("type") == "function":
+            fn = tool.get("function", {})
+            name = tool.get("name") or fn.get("name") or "unnamed_tool"
+            description = tool.get("description") or fn.get("description") or "No description provided."
+        else:
+            # Built-ins like web_search
+            name = tool.get("type") or "tool"
+            description = (
+                "OpenAI built-in web search"
+                if name == "web_search"
+                else "Built-in tool"
+            )
         print(f"  • {name}: {description}")
 
     while True:
