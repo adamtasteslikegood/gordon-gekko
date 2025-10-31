@@ -5,9 +5,11 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import Any, Dict, Iterable, List, MutableMapping
+import os
+from typing import Any, Dict, Iterable, List, MutableMapping, Tuple
 
 from ..agents.interactive import GekkoAgent
+from ..config import ResponsesConfig, resolve_responses_config
 
 logger = logging.getLogger("gekko.ai.responses")
 
@@ -17,15 +19,40 @@ DEFAULT_SYSTEM_PROMPT = (
     "Only rely on the tools for fresh numbers; summarise the results for the user."
 )
 
+TOOL_CALL_TYPES = {"tool_call", "function_call"}
+
+# Default config loader (env-first behavior) used when no explicit config is provided.
+_DEFAULT_CFG = resolve_responses_config()
+
 
 ContentBlock = Dict[str, Any]
 Message = Dict[str, Any]
+RESPONSE_ONLY_FIELDS = {"status"}
+
+
+def _default_content_type(role: str) -> str:
+    """Map a chat role to the Responses API content type."""
+
+    return "output_text" if role == "assistant" else "input_text"
+
+
+def _normalize_block_type(role: str, block_type: str | None) -> str:
+    """Ensure outgoing content blocks always use a valid Responses content type."""
+
+    if block_type in {"input_text", "output_text"}:
+        return block_type
+    if block_type == "text":
+        return _default_content_type(role)
+    return block_type or _default_content_type(role)
 
 
 def build_text_message(role: str, text: str) -> Message:
     """Create a Responses-style message containing a plain text block."""
 
-    return {"role": role, "content": [{"type": "text", "text": text}]}
+    return {
+        "role": role,
+        "content": [{"type": _default_content_type(role), "text": text}],
+    }
 
 
 def _normalize_dict(item: Any) -> Dict[str, Any]:
@@ -80,6 +107,169 @@ def _extract_output_text(response: Any) -> str:
     return ""
 
 
+def _strip_response_fields(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove fields that the Responses API rejects when echoed back."""
+
+    return {key: value for key, value in item.items() if key not in RESPONSE_ONLY_FIELDS}
+
+
+def _estimate_message_tokens(msg: Message | Dict[str, Any]) -> int:
+    """Rough token estimate for a message to keep us under model limits.
+
+    Heuristic: ~4 characters per token for English text plus a small overhead per block.
+    """
+    try:
+        role = msg.get("role", "")
+        content = msg.get("content", [])
+        total_chars = len(role)
+        overhead = 6  # role + JSON punctuation
+        if isinstance(content, list):
+            for block in content:
+                if not isinstance(block, MutableMapping):
+                    continue
+                text = block.get("text", "")
+                if isinstance(text, str):
+                    total_chars += len(text)
+                    overhead += 4
+        # Some message types (tool call/output) use alternative fields
+        if msg.get("type") in {"function_call", "tool_call"}:
+            args = msg.get("arguments")
+            if isinstance(args, (str, bytes, bytearray)):
+                total_chars += len(args)
+            elif isinstance(args, MutableMapping):
+                try:
+                    total_chars += len(json.dumps(args))
+                except Exception:
+                    total_chars += 0
+            overhead += 16
+        if msg.get("type") == "function_call_output":
+            out = msg.get("output", "")
+            if isinstance(out, str):
+                total_chars += len(out)
+            overhead += 8
+        # Convert chars to tokens
+        return int(total_chars / 4) + overhead
+    except Exception:
+        return 128
+
+
+def _estimate_tokens(messages: List[Message]) -> int:
+    return sum(_estimate_message_tokens(m) for m in messages)
+
+
+def _summarize_messages(messages: List[Message]) -> str:
+    """Programmatic, lossy summary for removed history."""
+    lines: List[str] = ["Conversation summary (truncated history):"]
+    for m in messages:
+        role = m.get("role") or m.get("type") or "message"
+        if role in {"user", "assistant", "system"}:
+            content = m.get("content", [])
+            texts = []
+            if isinstance(content, list):
+                for b in content:
+                    if isinstance(b, MutableMapping) and isinstance(b.get("text"), str):
+                        t = b["text"].strip()
+                        if t:
+                            texts.append(t.replace("\n", " "))
+            snippet = (" ".join(texts))[:300]
+            if snippet:
+                lines.append(f"- {role}: {snippet}...")
+        elif m.get("type") in {"function_call", "tool_call"}:
+            name = m.get("name") or (m.get("function") or {}).get("name")
+            lines.append(f"- tool_call: {name}")
+        elif m.get("type") == "function_call_output":
+            lines.append("- tool_output: (omitted)")
+    return "\n".join(lines)
+
+
+def _prune_history(messages: List[Message], cfg: ResponsesConfig) -> Tuple[List[Message], bool]:
+    """Ensure messages stay under TARGET_INPUT_TOKENS by dropping oldest and inserting a summary.
+
+    Returns (new_messages, pruned_flag).
+    """
+    total = _estimate_tokens(messages)
+    if total <= cfg.target_input_tokens:
+        return messages, False
+
+    # Keep system message(s)
+    system_msgs = [m for m in messages if m.get("role") == "system"]
+    non_system = [m for m in messages if m.get("role") != "system"]
+
+    # Always keep the most recent slice
+    tail_keep = max(cfg.min_messages_to_keep, 4)
+    recent = non_system[-tail_keep:]
+    removed = non_system[:-tail_keep]
+
+    summary_text = _summarize_messages(removed)
+    summary_msg = build_text_message("system", summary_text)
+
+    pruned: List[Message] = []
+    pruned.extend(system_msgs[:1])  # first system prompt
+    pruned.append(summary_msg)
+    # If there were additional system messages, keep them too
+    if len(system_msgs) > 1:
+        pruned.extend(system_msgs[1:])
+    pruned.extend(recent)
+
+    # If still above hard cap, drop more from the head of 'recent'
+    while _estimate_tokens(pruned) > cfg.max_input_tokens and len(recent) > 2:
+        recent = recent[1:]
+        pruned = pruned[: len(system_msgs[:1]) + 1] + recent
+
+    return pruned, True
+
+
+def _shrink_large_lists(obj: Any, cfg: ResponsesConfig) -> Any:
+    """Truncate large list fields in dicts to bound size.
+
+    - For dicts: if a value is a list longer than MAX_TOOL_ITEMS, keep the first N and add a metadata key with omitted count.
+    - For lists at the top level: truncate to MAX_TOOL_ITEMS.
+    - For long strings: truncate to reasonable length.
+    """
+    try:
+        if isinstance(obj, list):
+            if len(obj) > cfg.max_tool_items:
+                return obj[: cfg.max_tool_items] + [f"…omitted {len(obj) - cfg.max_tool_items} items"]
+            return obj
+        if isinstance(obj, MutableMapping):
+            new: Dict[str, Any] = {}
+            for k, v in obj.items():
+                if isinstance(v, list) and len(v) > cfg.max_tool_items:
+                    new[k] = v[: cfg.max_tool_items]
+                    new[f"_{k}_omitted_count"] = len(v) - cfg.max_tool_items
+                elif isinstance(v, str) and len(v) > 4000:
+                    new[k] = v[:4000] + "…"
+                else:
+                    new[k] = v
+            return new
+        return obj
+    except Exception:
+        return obj
+
+
+def _compact_tool_output(payload: Any, cfg: ResponsesConfig) -> Any:
+    """Return a payload safe for the model: shrink oversized JSON by truncating lists/strings.
+    If serialized size still exceeds MAX_TOOL_OUTPUT_CHARS, replace with a stub containing counts.
+    """
+    try:
+        compact = _shrink_large_lists(payload, cfg)
+        text = json.dumps(compact)
+        if len(text) <= cfg.max_tool_output_chars:
+            return compact
+        # Fallback: produce a stub
+        if isinstance(payload, list):
+            return {"_truncated": True, "type": "list", "length": len(payload)}
+        if isinstance(payload, MutableMapping):
+            return {
+                "_truncated": True,
+                "type": "object",
+                "keys": list(payload.keys())[: cfg.max_tool_items],
+            }
+        return {"_truncated": True, "type": type(payload).__name__}
+    except Exception:
+        return payload
+
+
 async def _call_responses(responses_api: Any, **kwargs: Any) -> Any:
     return await asyncio.to_thread(responses_api.create, **kwargs)
 
@@ -92,6 +282,7 @@ async def generate_response_with_tools(
     model: str,
     logger: logging.Logger | None = None,
     max_iterations: int = 8,
+    responses_config: ResponsesConfig | None = None,
 ) -> str:
     """Execute a Responses completion loop that fulfils tool calls."""
 
@@ -100,8 +291,15 @@ async def generate_response_with_tools(
 
     final_chunks: List[str] = []
     iteration = 0
+    pending_reasoning: List[Message] = []
+
+    cfg = responses_config or _DEFAULT_CFG
 
     while iteration < max_iterations:
+        # Proactively prune long histories before each model call
+        messages, was_pruned = _prune_history(messages, cfg)
+        if was_pruned:
+            log.debug("Pruned message history to stay within token budget.")
         iteration += 1
         response = await _call_responses(
             responses_api,
@@ -119,20 +317,29 @@ async def generate_response_with_tools(
             final_chunks.append(output_text.strip())
             break
 
-        for item in output_items:
+        for raw_item in output_items:
+            item = _normalize_dict(raw_item)
             item_type = item.get("type")
-            if item_type == "tool_call":
-                tool_calls.append(item)
+
+            if item_type in TOOL_CALL_TYPES:
+                if pending_reasoning:
+                    messages.extend(pending_reasoning)
+                    pending_reasoning = []
+                sanitized = _strip_response_fields(item)
+                tool_calls.append(sanitized)
+                messages.append(sanitized)
                 continue
 
             if item_type == "message":
+                pending_reasoning = []
                 role = item.get("role", "assistant")
                 content = _normalize_content(item.get("content"))
 
+                text_blocks = {"input_text", "output_text", "text"}
                 text_fragments = [
                     block.get("text", "")
                     for block in content
-                    if block.get("type") in {"text", "output_text"}
+                    if block.get("type") in text_blocks
                     and isinstance(block.get("text"), str)
                 ]
 
@@ -145,7 +352,7 @@ async def generate_response_with_tools(
                     "role": role,
                     "content": [
                         {
-                            "type": block.get("type", "text"),
+                            "type": _normalize_block_type(role, block.get("type")),
                             "text": block.get("text", ""),
                         }
                         for block in content
@@ -157,14 +364,43 @@ async def generate_response_with_tools(
                     message_payload["tool_call_id"] = item["tool_call_id"]
 
                 messages.append(message_payload)
+                continue
+
+            if item_type == "function_call_output":
+                pending_reasoning = []
+                messages.append(_strip_response_fields(item))
+                continue
+
+            if item_type == "reasoning":
+                pending_reasoning.append(_strip_response_fields(item))
+                continue
 
         if not tool_calls:
+            pending_reasoning = []
             break
 
         tool_messages: List[Message] = []
         for call in tool_calls:
-            tool_name = call.get("name") or ""
+            function_blob = call.get("function")
+            if isinstance(function_blob, MutableMapping):
+                function_payload = dict(function_blob)
+            else:
+                function_payload = {}
+
+            # Skip non-function built-in tool calls (e.g., web_search handled by OpenAI)
+            call_type = call.get("type")
+            if not function_payload and call_type != "function_call":
+                log.debug("Skipping non-function tool call: %r", call_type or call.get("name"))
+                continue
+
+            tool_name = (
+                call.get("name")
+                or function_payload.get("name")
+                or ""
+            )
             arguments_raw = call.get("arguments")
+            if arguments_raw is None:
+                arguments_raw = function_payload.get("arguments")
 
             if isinstance(arguments_raw, (str, bytes, bytearray)):
                 try:
@@ -193,20 +429,56 @@ async def generate_response_with_tools(
                     )
 
             result = await agent.dispatch(tool_name, arguments)
+
+            # Optionally persist full result to disk
+            if cfg.save_tool_outputs:
+                try:
+                    os.makedirs(cfg.tool_outputs_dir, exist_ok=True)
+                    safe_name = (tool_name or "tool").replace("/", "_").replace(" ", "_")
+                    call_id = (
+                        function_payload.get("call_id")
+                        or call.get("call_id")
+                        or function_payload.get("id")
+                        or call.get("id")
+                        or "call"
+                    )
+                    filename = f"{safe_name}-{call_id}.json"
+                    path = os.path.join(cfg.tool_outputs_dir, filename)
+                    with open(path, "w", encoding="utf-8") as f:
+                        json.dump(result, f)
+                    # Annotate result so the model gets a pointer
+                    if isinstance(result, dict):
+                        result = dict(result)
+                        result.setdefault("_saved_to", path)
+                    else:
+                        result = {"_saved_to": path, "data": result}
+                except Exception:  # best-effort persistence
+                    pass
+
+            result = _compact_tool_output(result, cfg)
+            tool_call_id = (
+                function_payload.get("call_id")
+                or call.get("call_id")
+                or function_payload.get("id")
+                or call.get("id")
+            )
+
+            if not tool_call_id:
+                log.warning("Skipping tool result for %s; missing call id.", tool_name)
+                continue
+
             tool_messages.append(
                 {
-                    "role": "tool",
-                    "tool_call_id": call.get("id"),
-                    "content": [
-                        {
-                            "type": "output_text",
-                            "text": json.dumps(result),
-                        }
-                    ],
+                    "type": "function_call_output",
+                    "call_id": tool_call_id,
+                    "output": json.dumps(result),
                 }
             )
 
         messages.extend(tool_messages)
+        # Prune again since tool outputs can be large
+        messages, _ = _prune_history(messages, cfg)
+        pending_reasoning = []
 
     else:  # pragma: no cover - defensive guard against API regressions
         raise RuntimeError("Exceeded maximum iterations while processing tool calls.")
@@ -221,11 +493,12 @@ async def run_gpt5_agent_cli(
     system_prompt: str | None = None,
     agent: GekkoAgent | None = None,
     responses_api: Any | None = None,
+    responses_config: ResponsesConfig | None = None,
 ) -> None:
     """Launch an interactive GPT-5 session in the terminal."""
 
     agent = agent or GekkoAgent()
-
+    
     if responses_api is None:
         from openai import OpenAI  # pylint: disable=import-error
 
@@ -240,8 +513,19 @@ async def run_gpt5_agent_cli(
     print("Connected to GPT-5 Responses API. Type 'exit' to quit.")
     print("Available tools:")
     for tool in agent.available_tools():
-        fn = tool.get("function", {})
-        print(f"  • {fn.get('name')}: {fn.get('description')}")
+        if tool.get("type") == "function":
+            fn = tool.get("function", {})
+            name = tool.get("name") or fn.get("name") or "unnamed_tool"
+            description = tool.get("description") or fn.get("description") or "No description provided."
+        else:
+            # Built-ins like web_search
+            name = tool.get("type") or "tool"
+            description = (
+                "OpenAI built-in web search"
+                if name == "web_search"
+                else "Built-in tool"
+            )
+        print(f"  • {name}: {description}")
 
     while True:
         user_input = await asyncio.to_thread(input, "You> ")
@@ -259,6 +543,7 @@ async def run_gpt5_agent_cli(
                 agent=agent,
                 messages=messages,
                 model=model,
+                responses_config=responses_config or _DEFAULT_CFG,
             )
         except Exception as exc:  # pragma: no cover - defensive logging for CLI use
             logger.exception("GPT-5 agent failed")

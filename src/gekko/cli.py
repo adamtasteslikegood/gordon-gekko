@@ -6,10 +6,11 @@ import os
 import sys
 from typing import Any, Dict, List, Optional, TextIO
 
-from .services.coingecko import get_coin_tickers
+from .services.coingecko import get_coin_tickers, resolve_coin_id
 from .services.arbitrage import normalize_tickers, compute_opportunities
 from .agents.interactive import GekkoAgent
 from .ai.responses import run_gpt5_agent_cli
+from .config import resolve_responses_config, ResponsesConfig
 
 
 def _print_table(rows: List[List[str]]):
@@ -34,8 +35,9 @@ async def _fetch_normalized_tickers(
     min_volume: Optional[float],
 ):
     all_tickers: List[Dict[str, Any]] = []
+    resolved_coin_id = await resolve_coin_id(coin_id)
     for page in range(1, pages + 1):
-        payload = await get_coin_tickers(coin_id=coin_id, page=page)
+        payload = await get_coin_tickers(coin_id=resolved_coin_id, page=page)
         all_tickers.extend(payload.get("tickers", []))
     normalized = normalize_tickers(
         all_tickers,
@@ -207,17 +209,49 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp_gpt.add_argument(
         "--model",
-        default="gpt-5.1-mini",
-        help="OpenAI Responses model to use (default: gpt-5.1-mini)",
+        default="gpt-5",
+        help="OpenAI Responses model to use (default: gpt-5)",
     )
     sp_gpt.add_argument(
         "--system-prompt",
         default=None,
         help="Override the default system instructions for GPT-5",
     )
+    # Config management
+    sp_gpt.add_argument(
+        "--config",
+        default=None,
+        help="Path to JSON config (defaults to ./gekko.config.json if present)",
+    )
+    # Threshold overrides (None = no override)
+    sp_gpt.add_argument("--max-input-tokens", type=int, default=None)
+    sp_gpt.add_argument("--target-input-tokens", type=int, default=None)
+    sp_gpt.add_argument("--max-tool-output-chars", type=int, default=None)
+    sp_gpt.add_argument("--max-tool-items", type=int, default=None)
+    sp_gpt.add_argument("--min-messages-to-keep", type=int, default=None)
+    sp_gpt.add_argument("--save-tool-outputs", action="store_true", help="Persist full tool outputs to disk and reference them in-chat")
+    sp_gpt.add_argument("--tool-outputs-dir", default=None, help="Directory to save tool outputs (with --save-tool-outputs)")
 
     async def _run_gpt(args: argparse.Namespace):
-        await run_gpt_cli(model=args.model, system_prompt=args.system_prompt)
+        # Resolve base config (env-first or as specified by config file mode)
+        cfg: ResponsesConfig = resolve_responses_config(args.config)
+        # Apply CLI overrides if provided
+        if args.max_input_tokens is not None:
+            cfg.max_input_tokens = args.max_input_tokens
+        if args.target_input_tokens is not None:
+            cfg.target_input_tokens = args.target_input_tokens
+        if args.max_tool_output_chars is not None:
+            cfg.max_tool_output_chars = args.max_tool_output_chars
+        if args.max_tool_items is not None:
+            cfg.max_tool_items = args.max_tool_items
+        if args.min_messages_to_keep is not None:
+            cfg.min_messages_to_keep = args.min_messages_to_keep
+        if args.save_tool_outputs:
+            cfg.save_tool_outputs = True
+        if args.tool_outputs_dir is not None:
+            cfg.tool_outputs_dir = args.tool_outputs_dir
+
+        await run_gpt_cli(model=args.model, system_prompt=args.system_prompt, responses_config=cfg)
 
     sp_gpt.set_defaults(func=_run_gpt)
 
@@ -247,7 +281,9 @@ async def serve_agent(
         output_stream.write(json.dumps(payload) + "\n")
         output_stream.flush()
 
-    _emit({"status": "ready", "tools": agent.available_tools()})
+    # Advertise only function tools over the JSON IPC interface
+    announced_tools = [t for t in agent.available_tools() if t.get("type") == "function"]
+    _emit({"status": "ready", "tools": announced_tools})
 
     while True:
         line = await asyncio.to_thread(input_stream.readline)
@@ -331,7 +367,7 @@ async def run_agent() -> None:
     await serve_agent(agent=None, input_stream=sys.stdin, output_stream=sys.stdout)
 
 
-async def run_gpt_cli(*, model: str, system_prompt: str | None) -> None:
+async def run_gpt_cli(*, model: str, system_prompt: str | None, responses_config: ResponsesConfig) -> None:
     if "OPENAI_API_KEY" not in os.environ:
         print(
             "OPENAI_API_KEY environment variable is required for gpt5-agent.",
@@ -345,7 +381,7 @@ async def run_gpt_cli(*, model: str, system_prompt: str | None) -> None:
     prompt = system_prompt if system_prompt is not None else None
 
     try:
-        await run_gpt5_agent_cli(model=model, system_prompt=prompt)
+        await run_gpt5_agent_cli(model=model, system_prompt=prompt, responses_config=responses_config)
     except Exception as exc:  # pragma: no cover - defensive logging
         logging.getLogger("gekko.cli").exception("Failed to start GPT-5 agent")
         print(f"Failed to start GPT-5 agent: {exc}", file=sys.stderr)

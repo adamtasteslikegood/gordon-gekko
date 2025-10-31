@@ -20,7 +20,11 @@ class GekkoAgent:
         }
 
     def available_tools(self) -> List[Dict[str, Any]]:
-        return [tool.as_function_tool() for tool in self._tools.values()]
+        # Expose Gordon Gekko function tools plus OpenAI built-in web search.
+        tools: List[Dict[str, Any]] = [tool.as_function_tool() for tool in self._tools.values()]
+        # Enable built-in web search in GPT Responses API
+        tools.append({"type": "web_search"})
+        return tools
 
     async def dispatch(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         tool = self._tools.get(tool_name)

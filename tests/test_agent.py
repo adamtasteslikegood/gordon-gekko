@@ -71,7 +71,7 @@ def test_agent_cli_routes_requests(monkeypatch):
     assert messages[0]["status"] == "ready"
     assert len(messages[0]["tools"]) >= 2
     assert all(tool["type"] == "function" for tool in messages[0]["tools"])
-    first_tool = messages[0]["tools"][0]["function"]
+    first_tool = messages[0]["tools"][0]
     assert first_tool["name"] == "list_tickers"
     assert first_tool["parameters"]["type"] == "object"
 
